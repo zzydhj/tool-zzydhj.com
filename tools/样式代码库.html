@@ -1,343 +1,1241 @@
-
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SnipLib — Code Snippet Library</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0f1117;--bg2:#1a1d27;--bg3:#222536;--border:#2e3148;
-  --text:#e2e8f0;--text2:#94a3b8;--accent:#6366f1;--accent2:#8b5cf6;
-  --green:#10b981;--orange:#f59e0b;--red:#ef4444;--blue:#3b82f6;
-}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;height:100vh;overflow:hidden}
-/* SIDEBAR */
-.sidebar{width:240px;min-width:240px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow:hidden}
-.sidebar-header{padding:18px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
-.sidebar-logo{font-size:15px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px}
-.sidebar-logo span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.sidebar-actions{display:flex;gap:6px;margin-top:10px}
-.btn-sm{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:flex;align-items:center;gap:4px}
-.btn-add-cat{background:rgba(99,102,241,.15);color:var(--accent);border:1px solid rgba(99,102,241,.3)}
-.btn-add-cat:hover{background:rgba(99,102,241,.25)}
-.cat-list{flex:1;overflow-y:auto;padding:8px 0}
-.cat-item{display:flex;align-items:center;gap:7px;padding:8px 10px 8px 12px;cursor:pointer;border-left:3px solid transparent;transition:all .15s;user-select:none;position:relative}
-.cat-item:hover{background:var(--bg3);color:var(--text)}
-.cat-item.active{background:rgba(99,102,241,.1);border-left-color:var(--accent);color:var(--accent)}
-.cat-item.drag-over{background:rgba(99,102,241,.2);border-left-color:var(--accent)}
-.cat-item.dragging{opacity:.4}
-.drag-handle{cursor:grab;color:var(--text2);font-size:13px;flex-shrink:0;opacity:0;transition:opacity .15s;line-height:1}
-.cat-item:hover .drag-handle{opacity:1}
-.drag-handle:active{cursor:grabbing}
-.cat-emoji{font-size:14px;flex-shrink:0}
-.cat-name{flex:1;font-size:13px;font-weight:500;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cat-count{font-size:10px;background:var(--bg3);color:var(--text2);padding:1px 6px;border-radius:10px;flex-shrink:0}
-.cat-item.active .cat-count{background:rgba(99,102,241,.2);color:var(--accent)}
-.cat-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0}
-.cat-item:hover .cat-actions{opacity:1}
-.cat-btn{background:none;border:none;cursor:pointer;font-size:11px;padding:2px 4px;border-radius:3px;color:var(--text2);transition:all .15s}
-.cat-btn:hover{background:var(--bg);color:var(--text)}
-.cat-btn.del:hover{color:var(--red)}
-/* MAIN */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.topbar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg2)}
-.topbar-title{font-size:15px;font-weight:700;color:var(--text);flex-shrink:0;min-width:80px}
-.search-wrap{flex:1;max-width:320px;position:relative}
-.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 12px 7px 30px;border-radius:8px;font-size:13px;outline:none;transition:border .15s}
-.search-wrap input:focus{border-color:var(--accent)}
-.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px}
-.topbar-right{display:flex;align-items:center;gap:7px;margin-left:auto}
-.btn-icon{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:6px 11px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px;white-space:nowrap}
-.btn-icon:hover{background:var(--bg);color:var(--text)}
-.btn-icon.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;border-color:transparent}
-.btn-icon.primary:hover{opacity:.9}
-.btn-icon.export{background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)}
-.btn-icon.export:hover{background:rgba(16,185,129,.2)}
-.btn-icon.import-btn{background:rgba(245,158,11,.1);color:var(--orange);border-color:rgba(245,158,11,.3)}
-.btn-icon.import-btn:hover{background:rgba(245,158,11,.2)}
-.view-toggle{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.view-btn{background:none;border:none;color:var(--text2);padding:6px 10px;cursor:pointer;font-size:13px;transition:all .15s}
-.view-btn.active{background:var(--accent);color:white}
-/* CONTENT */
-.content{flex:1;overflow-y:auto;padding:20px}
-.empty-state{text-align:center;padding:80px 20px;color:var(--text2)}
-.empty-state .icon{font-size:48px;margin-bottom:16px}
-.empty-state h3{font-size:18px;font-weight:600;color:var(--text);margin-bottom:8px}
-.empty-state p{font-size:13px;line-height:1.6}
-/* GRID */
-.snippets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.snippets-list{display:flex;flex-direction:column;gap:10px}
-/* CARD */
-.snippet-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:all .2s;display:flex;flex-direction:column}
-.snippet-card:hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 8px 24px rgba(99,102,241,.15);transform:translateY(-2px)}
-/* 预览区 */
-.card-preview-wrap{height:190px;background:#f0f0f0;position:relative;overflow:hidden;flex-shrink:0;cursor:pointer}
-.card-preview-wrap iframe{width:200%;height:200%;transform:scale(.5);transform-origin:0 0;border:none;pointer-events:none;display:block}
-.card-preview-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg3);color:var(--text2);font-size:12px;flex-direction:column;gap:8px}
-.preview-loading{font-size:22px;animation:spin 1.2s linear infinite;display:inline-block}
-@keyframes spin{to{transform:rotate(360deg)}}
-.card-preview-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center}
-.card-preview-overlay:hover{background:rgba(99,102,241,.15)}
-.card-preview-overlay .preview-hint{opacity:0;transition:opacity .2s;background:var(--accent);color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700}
-.card-preview-overlay:hover .preview-hint{opacity:1}
-.card-info{padding:12px 14px 10px;flex:1;display:flex;flex-direction:column}
-.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
-.card-title{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
-.card-cat-badge{font-size:10px;background:rgba(99,102,241,.15);color:var(--accent);padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0}
-.card-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px;flex:1}
-.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
-.tag{font-size:10px;background:var(--bg3);color:var(--text2);padding:2px 7px;border-radius:4px}
-.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)}
-.card-meta{font-size:11px;color:var(--text2)}
-.card-actions{display:flex;gap:4px}
-.card-action-btn{background:none;border:none;cursor:pointer;font-size:11px;padding:4px 8px;border-radius:5px;color:var(--text2);transition:all .15s;font-weight:600;white-space:nowrap}
-.card-action-btn:hover{background:var(--bg3);color:var(--text)}
-.card-action-btn.copy-btn-card{background:rgba(99,102,241,.1);color:var(--accent);border:1px solid rgba(99,102,241,.2)}
-.card-action-btn.copy-btn-card:hover{background:rgba(99,102,241,.2)}
-.card-action-btn.copy-btn-card.copied{background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)}
-.card-action-btn.del:hover{background:rgba(239,68,68,.1);color:var(--red)}
-/* list view */
-.snippets-list .snippet-card{flex-direction:row;height:80px}
-.snippets-list .card-preview-wrap{width:120px;height:80px;flex-shrink:0}
-.snippets-list .card-preview-wrap iframe{width:300%;height:300%;transform:scale(.333);transform-origin:0 0}
-.snippets-list .card-info{padding:10px 12px;flex-direction:row;align-items:center;gap:12px}
-.snippets-list .card-top{margin-bottom:0;flex:1}
-.snippets-list .card-desc,.snippets-list .card-tags{display:none}
-.snippets-list .card-footer{border-top:none;padding-top:0;flex-shrink:0}
-/* MODALS */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-overlay.open{opacity:1;pointer-events:all}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:90%;max-width:540px;max-height:90vh;overflow-y:auto;transform:scale(.95);transition:transform .2s}
-.modal-overlay.open .modal{transform:scale(1)}
-.modal-header{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.modal-title{font-size:15px;font-weight:700;color:var(--text)}
-.modal-close{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .15s}
-.modal-close:hover{background:var(--bg3);color:var(--text)}
-.modal-body{padding:18px 22px}
-.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
-.form-group{margin-bottom:14px}
-.form-label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:8px;font-size:13px;outline:none;transition:border .15s;font-family:inherit}
-.form-input:focus{border-color:var(--accent)}
-textarea.form-input{resize:vertical;min-height:80px;font-family:'Fira Code',monospace;font-size:12px}
-textarea.form-input.code-area{min-height:220px}
-.btn-modal{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
-.btn-cancel{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
-.btn-cancel:hover{color:var(--text)}
-.btn-confirm{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
-.btn-confirm:hover{opacity:.9}
-/* PREVIEW MODAL — 全屏 */
-.preview-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:2000;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s}
-.preview-modal-overlay.open{opacity:1;pointer-events:all}
-.preview-topbar{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-.preview-title{font-size:14px;font-weight:700;color:var(--text);flex:1;min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.preview-tabs{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0}
-.preview-tab{background:none;border:none;color:var(--text2);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.preview-tab.active{background:var(--accent);color:white}
-.preview-copy-btn{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.35);padding:5px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
-.preview-copy-btn:hover{background:rgba(16,185,129,.22)}
-.preview-copy-btn.copied{color:var(--green)}
-.preview-close{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.3);padding:5px 12px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;flex-shrink:0}
-.preview-close:hover{background:rgba(239,68,68,.2)}
-/* preview body */
-.preview-body{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
-.preview-iframe-wrap{flex:1;background:#fff;position:relative;overflow:hidden}
-.preview-iframe-wrap iframe{width:100%;height:100%;border:none;display:block}
-.screen-indicator{position:absolute;bottom:14px;right:18px;background:rgba(0,0,0,.65);color:rgba(255,255,255,.7);font-size:11px;padding:4px 12px;border-radius:20px;pointer-events:none;backdrop-filter:blur(6px)}
-.preview-code-wrap{flex:1;overflow:auto;background:#0d1117;padding:24px 28px}
-.preview-code-wrap pre{font-family:'Fira Code','Consolas',monospace;font-size:13px;line-height:1.75;color:#e2e8f0;white-space:pre-wrap;word-break:break-all}
-/* IMPORT MODAL */
-.import-tabs{display:flex;margin-bottom:14px;border-bottom:1px solid var(--border)}
-.import-tab-btn{background:none;border:none;color:var(--text2);padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
-.import-tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.import-panel{display:none}
-.import-panel.active{display:block}
-.file-drop{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .15s;color:var(--text2)}
-.file-drop:hover,.file-drop.dragover{border-color:var(--accent);background:rgba(99,102,241,.05);color:var(--text)}
-.file-drop input{display:none}
-/* TOAST */
-.toast-wrap{position:fixed;bottom:22px;right:22px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 15px;border-radius:8px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;transform:translateX(120%);transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.3)}
-.toast.show{transform:translateX(0)}
-.toast.success{border-color:rgba(16,185,129,.4);color:var(--green)}
-.toast.error{border-color:rgba(239,68,68,.4);color:var(--red)}
-.toast.info{border-color:rgba(99,102,241,.4);color:var(--accent)}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnipLib — Code Snippet Library</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    :root {
+      --bg: #0f1117;
+      --bg2: #1a1d27;
+      --bg3: #222536;
+      --border: #2e3148;
+      --text: #e2e8f0;
+      --text2: #94a3b8;
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --green: #10b981;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden
+    }
+
+    .sidebar-header {
+      padding: 18px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0
+    }
+
+    .sidebar-logo {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .sidebar-logo span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent
+    }
+
+    .sidebar-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 4px
+    }
+
+    .btn-add-cat {
+      background: rgba(99, 102, 241, .15);
+      color: var(--accent);
+      border: 1px solid rgba(99, 102, 241, .3)
+    }
+
+    .btn-add-cat:hover {
+      background: rgba(99, 102, 241, .25)
+    }
+
+    .cat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0
+    }
+
+    .cat-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 10px 8px 12px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all .15s;
+      user-select: none;
+      position: relative
+    }
+
+    .cat-item:hover {
+      background: var(--bg3);
+      color: var(--text)
+    }
+
+    .cat-item.active {
+      background: rgba(99, 102, 241, .1);
+      border-left-color: var(--accent);
+      color: var(--accent)
+    }
+
+    .cat-item.drag-over {
+      background: rgba(99, 102, 241, .2);
+      border-left-color: var(--accent)
+    }
+
+    .cat-item.dragging {
+      opacity: .4
+    }
+
+    .drag-handle {
+      cursor: grab;
+      color: var(--text2);
+      font-size: 13px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity .15s;
+      line-height: 1
+    }
+
+    .cat-item:hover .drag-handle {
+      opacity: 1
+    }
+
+    .drag-handle:active {
+      cursor: grabbing
+    }
+
+    .cat-emoji {
+      font-size: 14px;
+      flex-shrink: 0
+    }
+
+    .cat-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+      color: inherit;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .cat-count {
+      font-size: 10px;
+      background: var(--bg3);
+      color: var(--text2);
+      padding: 1px 6px;
+      border-radius: 10px;
+      flex-shrink: 0
+    }
+
+    .cat-item.active .cat-count {
+      background: rgba(99, 102, 241, .2);
+      color: var(--accent)
+    }
+
+    .cat-actions {
+      display: flex;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity .15s;
+      flex-shrink: 0
+    }
+
+    .cat-item:hover .cat-actions {
+      opacity: 1
+    }
+
+    .cat-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      color: var(--text2);
+      transition: all .15s
+    }
+
+    .cat-btn:hover {
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .cat-btn.del:hover {
+      color: var(--red)
+    }
+
+    /* MAIN */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden
+    }
+
+    .topbar {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      background: var(--bg2)
+    }
+
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      flex-shrink: 0;
+      min-width: 80px
+    }
+
+    .search-wrap {
+      flex: 1;
+      max-width: 320px;
+      position: relative
+    }
+
+    .search-wrap input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 12px 7px 30px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border .15s
+    }
+
+    .search-wrap input:focus {
+      border-color: var(--accent)
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text2);
+      font-size: 12px
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-left: auto
+    }
+
+    .btn-icon {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 6px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap
+    }
+
+    .btn-icon:hover {
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .btn-icon.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      border-color: transparent
+    }
+
+    .btn-icon.primary:hover {
+      opacity: .9
+    }
+
+    .btn-icon.export {
+      background: rgba(16, 185, 129, .1);
+      color: var(--green);
+      border-color: rgba(16, 185, 129, .3)
+    }
+
+    .btn-icon.export:hover {
+      background: rgba(16, 185, 129, .2)
+    }
+
+    .btn-icon.import-btn {
+      background: rgba(245, 158, 11, .1);
+      color: var(--orange);
+      border-color: rgba(245, 158, 11, .3)
+    }
+
+    .btn-icon.import-btn:hover {
+      background: rgba(245, 158, 11, .2)
+    }
+
+    .view-toggle {
+      display: flex;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden
+    }
+
+    .view-btn {
+      background: none;
+      border: none;
+      color: var(--text2);
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all .15s
+    }
+
+    .view-btn.active {
+      background: var(--accent);
+      color: white
+    }
+
+    /* CONTENT */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text2)
+    }
+
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 16px
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px
+    }
+
+    .empty-state p {
+      font-size: 13px;
+      line-height: 1.6
+    }
+
+    /* GRID */
+    .snippets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px
+    }
+
+    .snippets-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px
+    }
+
+    /* CARD */
+    .snippet-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all .2s;
+      display: flex;
+      flex-direction: column
+    }
+
+    .snippet-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(99, 102, 241, .15);
+      transform: translateY(-2px)
+    }
+
+    /* 预览区 */
+    .card-preview-wrap {
+      height: 190px;
+      background: #f0f0f0;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      cursor: pointer
+    }
+
+    .card-preview-wrap iframe {
+      width: 200%;
+      height: 200%;
+      transform: scale(.5);
+      transform-origin: 0 0;
+      border: none;
+      pointer-events: none;
+      display: block
+    }
+
+    .card-preview-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg3);
+      color: var(--text2);
+      font-size: 12px;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .preview-loading {
+      font-size: 22px;
+      animation: spin 1.2s linear infinite;
+      display: inline-block
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .card-preview-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0);
+      cursor: pointer;
+      transition: background .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .card-preview-overlay:hover {
+      background: rgba(99, 102, 241, .15)
+    }
+
+    .card-preview-overlay .preview-hint {
+      opacity: 0;
+      transition: opacity .2s;
+      background: var(--accent);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .card-preview-overlay:hover .preview-hint {
+      opacity: 1
+    }
+
+    .card-info {
+      padding: 12px 14px 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3
+    }
+
+    .card-cat-badge {
+      font-size: 10px;
+      background: rgba(99, 102, 241, .15);
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 10px;
+      white-space: nowrap;
+      flex-shrink: 0
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.5;
+      margin-bottom: 8px;
+      flex: 1
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px
+    }
+
+    .tag {
+      font-size: 10px;
+      background: var(--bg3);
+      color: var(--text2);
+      padding: 2px 7px;
+      border-radius: 4px
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid var(--border)
+    }
+
+    .card-meta {
+      font-size: 11px;
+      color: var(--text2)
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 4px
+    }
+
+    .card-action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      color: var(--text2);
+      transition: all .15s;
+      font-weight: 600;
+      white-space: nowrap
+    }
+
+    .card-action-btn:hover {
+      background: var(--bg3);
+      color: var(--text)
+    }
+
+    .card-action-btn.copy-btn-card {
+      background: rgba(99, 102, 241, .1);
+      color: var(--accent);
+      border: 1px solid rgba(99, 102, 241, .2)
+    }
+
+    .card-action-btn.copy-btn-card:hover {
+      background: rgba(99, 102, 241, .2)
+    }
+
+    .card-action-btn.copy-btn-card.copied {
+      background: rgba(16, 185, 129, .1);
+      color: var(--green);
+      border-color: rgba(16, 185, 129, .3)
+    }
+
+    .card-action-btn.del:hover {
+      background: rgba(239, 68, 68, .1);
+      color: var(--red)
+    }
+
+    /* list view */
+    .snippets-list .snippet-card {
+      flex-direction: row;
+      height: 80px
+    }
+
+    .snippets-list .card-preview-wrap {
+      width: 120px;
+      height: 80px;
+      flex-shrink: 0
+    }
+
+    .snippets-list .card-preview-wrap iframe {
+      width: 300%;
+      height: 300%;
+      transform: scale(.333);
+      transform-origin: 0 0
+    }
+
+    .snippets-list .card-info {
+      padding: 10px 12px;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px
+    }
+
+    .snippets-list .card-top {
+      margin-bottom: 0;
+      flex: 1
+    }
+
+    .snippets-list .card-desc,
+    .snippets-list .card-tags {
+      display: none
+    }
+
+    .snippets-list .card-footer {
+      border-top: none;
+      padding-top: 0;
+      flex-shrink: 0
+    }
+
+    /* MODALS */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .75);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all
+    }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 90%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(.95);
+      transition: transform .2s
+    }
+
+    .modal-overlay.open .modal {
+      transform: scale(1)
+    }
+
+    .modal-header {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all .15s
+    }
+
+    .modal-close:hover {
+      background: var(--bg3);
+      color: var(--text)
+    }
+
+    .modal-body {
+      padding: 18px 22px
+    }
+
+    .modal-footer {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px
+    }
+
+    .form-group {
+      margin-bottom: 14px
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: .5px
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 11px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border .15s;
+      font-family: inherit
+    }
+
+    .form-input:focus {
+      border-color: var(--accent)
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      min-height: 80px;
+      font-family: 'Fira Code', monospace;
+      font-size: 12px
+    }
+
+    textarea.form-input.code-area {
+      min-height: 220px
+    }
+
+    .btn-modal {
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .15s
+    }
+
+    .btn-cancel {
+      background: var(--bg3);
+      color: var(--text2);
+      border: 1px solid var(--border)
+    }
+
+    .btn-cancel:hover {
+      color: var(--text)
+    }
+
+    .btn-confirm {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white
+    }
+
+    .btn-confirm:hover {
+      opacity: .9
+    }
+
+    /* PREVIEW MODAL — 全屏 */
+    .preview-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .95);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s
+    }
+
+    .preview-modal-overlay.open {
+      opacity: 1;
+      pointer-events: all
+    }
+
+    .preview-topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap
+    }
+
+    .preview-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      flex: 1;
+      min-width: 120px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .preview-tabs {
+      display: flex;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      overflow: hidden;
+      flex-shrink: 0
+    }
+
+    .preview-tab {
+      background: none;
+      border: none;
+      color: var(--text2);
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s
+    }
+
+    .preview-tab.active {
+      background: var(--accent);
+      color: white
+    }
+
+    .preview-copy-btn {
+      background: rgba(16, 185, 129, .12);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, .35);
+      padding: 5px 14px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+      flex-shrink: 0
+    }
+
+    .preview-copy-btn:hover {
+      background: rgba(16, 185, 129, .22)
+    }
+
+    .preview-copy-btn.copied {
+      color: var(--green)
+    }
+
+    .preview-close {
+      background: rgba(239, 68, 68, .1);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, .3);
+      padding: 5px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+      flex-shrink: 0
+    }
+
+    .preview-close:hover {
+      background: rgba(239, 68, 68, .2)
+    }
+
+    /* preview body */
+    .preview-body {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column
+    }
+
+    .preview-iframe-wrap {
+      flex: 1;
+      background: #fff;
+      position: relative;
+      overflow: hidden
+    }
+
+    .preview-iframe-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block
+    }
+
+    .screen-indicator {
+      position: absolute;
+      bottom: 14px;
+      right: 18px;
+      background: rgba(0, 0, 0, .65);
+      color: rgba(255, 255, 255, .7);
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      pointer-events: none;
+      backdrop-filter: blur(6px)
+    }
+
+    .preview-code-wrap {
+      flex: 1;
+      overflow: auto;
+      background: #0d1117;
+      padding: 24px 28px
+    }
+
+    .preview-code-wrap pre {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.75;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-all
+    }
+
+    /* IMPORT MODAL */
+    .import-tabs {
+      display: flex;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .import-tab-btn {
+      background: none;
+      border: none;
+      color: var(--text2);
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all .15s
+    }
+
+    .import-tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent)
+    }
+
+    .import-panel {
+      display: none
+    }
+
+    .import-panel.active {
+      display: block
+    }
+
+    .file-drop {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .15s;
+      color: var(--text2)
+    }
+
+    .file-drop:hover,
+    .file-drop.dragover {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, .05);
+      color: var(--text)
+    }
+
+    .file-drop input {
+      display: none
+    }
+
+    /* TOAST */
+    .toast-wrap {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none
+    }
+
+    .toast {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateX(120%);
+      transition: transform .3s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .3)
+    }
+
+    .toast.show {
+      transform: translateX(0)
+    }
+
+    .toast.success {
+      border-color: rgba(16, 185, 129, .4);
+      color: var(--green)
+    }
+
+    .toast.error {
+      border-color: rgba(239, 68, 68, .4);
+      color: var(--red)
+    }
+
+    .toast.info {
+      border-color: rgba(99, 102, 241, .4);
+      color: var(--accent)
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px
+    }
+  </style>
 </head>
+
 <body>
 
-<aside class="sidebar">
-  <div class="sidebar-header">
-    <div class="sidebar-logo">📦 <span>SnipLib</span></div>
-    <div class="sidebar-actions">
-      <button class="btn-sm btn-add-cat" onclick="openAddCat()">＋ 新建分类</button>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">📦 <span>SnipLib</span></div>
+      <div class="sidebar-actions">
+        <button class="btn-sm btn-add-cat" onclick="openAddCat()">＋ 新建分类</button>
+      </div>
     </div>
-  </div>
-  <div class="cat-list" id="catList"></div>
-</aside>
+    <div class="cat-list" id="catList"></div>
+  </aside>
 
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-title" id="topbarTitle">全部片段</div>
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="搜索名称、标签…" oninput="renderSnippets()">
-    </div>
-    <div class="topbar-right">
-      <button class="btn-icon export" onclick="exportData()">⬇️ 导出</button>
-      <button class="btn-icon import-btn" onclick="openImport()">⬆️ 导入</button>
-      <div class="view-toggle">
-        <button class="view-btn active" id="viewGrid" onclick="setView('grid')" title="网格">⊞</button>
-        <button class="view-btn" id="viewList" onclick="setView('list')" title="列表">☰</button>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">全部片段</div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="搜索名称、标签…" oninput="renderSnippets()">
       </div>
-      <button class="btn-icon primary" onclick="openAddSnippet()">＋ 添加片段</button>
-    </div>
-  </div>
-  <div class="content" id="content"></div>
-</div>
-
-<div class="toast-wrap" id="toastWrap"></div>
-
-<!-- ADD/EDIT SNIPPET -->
-<div class="modal-overlay" id="snippetModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="snippetModalTitle">添加代码片段</div>
-      <button class="modal-close" onclick="closeModal('snippetModal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">片段名称 *</label>
-        <input class="form-input" id="sName" placeholder="例：Solutions Cards Section">
-      </div>
-      <div class="form-group">
-        <label class="form-label">所属分类</label>
-        <select class="form-input" id="sCat"></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">描述（可选）</label>
-        <input class="form-input" id="sDesc" placeholder="简短描述这个片段的用途">
-      </div>
-      <div class="form-group">
-        <label class="form-label">标签（逗号分隔）</label>
-        <input class="form-input" id="sTags" placeholder="例：card, hero, dark">
-      </div>
-      <div class="form-group">
-        <label class="form-label">HTML 代码 *</label>
-        <textarea class="form-input code-area" id="sCode" placeholder="粘贴完整的 HTML + CSS 代码…"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-modal btn-cancel" onclick="closeModal('snippetModal')">取消</button>
-      <button class="btn-modal btn-confirm" onclick="saveSnippet()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- ADD/EDIT CAT -->
-<div class="modal-overlay" id="catModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="catModalTitle">新建分类</div>
-      <button class="modal-close" onclick="closeModal('catModal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">分类名称 *</label>
-        <input class="form-input" id="catName" placeholder="例：Hero Section">
-      </div>
-      <div class="form-group">
-        <label class="form-label">图标 Emoji</label>
-        <input class="form-input" id="catEmoji" placeholder="例：🎨" maxlength="4">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-modal btn-cancel" onclick="closeModal('catModal')">取消</button>
-      <button class="btn-modal btn-confirm" onclick="saveCat()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- IMPORT -->
-<div class="modal-overlay" id="importModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">导入数据</div>
-      <button class="modal-close" onclick="closeModal('importModal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="import-tabs">
-        <button class="import-tab-btn active" onclick="switchImportTab('File',this)">📁 选择文件</button>
-        <button class="import-tab-btn" onclick="switchImportTab('Text',this)">📋 粘贴 JSON</button>
-      </div>
-      <div class="import-panel active" id="importFile">
-        <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()"
-          ondragover="fileDragOver(event)" ondragleave="fileDragLeave()" ondrop="fileDropped(event)">
-          <input type="file" id="fileInput" accept=".json" onchange="fileSelected(event)">
-          <div style="font-size:30px;margin-bottom:8px">📂</div>
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">点击选择 .json 文件</div>
-          <div style="font-size:12px">或拖拽文件到此处</div>
+      <div class="topbar-right">
+        <button class="btn-icon export" onclick="exportData()">⬇️ 导出</button>
+        <button class="btn-icon import-btn" onclick="openImport()">⬆️ 导入</button>
+        <div class="view-toggle">
+          <button class="view-btn active" id="viewGrid" onclick="setView('grid')" title="网格">⊞</button>
+          <button class="view-btn" id="viewList" onclick="setView('list')" title="列表">☰</button>
         </div>
-        <div id="fileInfo" style="margin-top:10px;font-size:12px;color:var(--green);display:none"></div>
-      </div>
-      <div class="import-panel" id="importText">
-        <textarea class="form-input code-area" id="importJson" placeholder="粘贴从导出功能得到的 JSON 内容…" style="min-height:160px"></textarea>
-      </div>
-      <div style="margin-top:12px;padding:10px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:12px;color:var(--orange)">
-        ⚠️ 导入会与现有数据<strong>合并</strong>，相同 ID 的片段将被覆盖，不会删除其他数据。
+        <button class="btn-icon primary" onclick="openAddSnippet()">＋ 添加片段</button>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-modal btn-cancel" onclick="closeModal('importModal')">取消</button>
-      <button class="btn-modal btn-confirm" onclick="doImport()">确认导入</button>
+    <div class="content" id="content"></div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- ADD/EDIT SNIPPET -->
+  <div class="modal-overlay" id="snippetModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="snippetModalTitle">添加代码片段</div>
+        <button class="modal-close" onclick="closeModal('snippetModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">片段名称 *</label>
+          <input class="form-input" id="sName" placeholder="例：Solutions Cards Section">
+        </div>
+        <div class="form-group">
+          <label class="form-label">所属分类</label>
+          <select class="form-input" id="sCat"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">描述（可选）</label>
+          <input class="form-input" id="sDesc" placeholder="简短描述这个片段的用途">
+        </div>
+        <div class="form-group">
+          <label class="form-label">标签（逗号分隔）</label>
+          <input class="form-input" id="sTags" placeholder="例：card, hero, dark">
+        </div>
+        <div class="form-group">
+          <label class="form-label">HTML 代码 *</label>
+          <textarea class="form-input code-area" id="sCode" placeholder="粘贴完整的 HTML + CSS 代码…"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal btn-cancel" onclick="closeModal('snippetModal')">取消</button>
+        <button class="btn-modal btn-confirm" onclick="saveSnippet()">保存</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- PREVIEW MODAL 全屏 -->
-<div class="preview-modal-overlay" id="previewModal">
-  <div class="preview-topbar">
-    <div class="preview-title" id="previewTitle">预览</div>
-    <div class="preview-tabs">
-      <button class="preview-tab active" id="tabPreview" onclick="switchPreviewTab('preview')">👁 效果预览</button>
-      <button class="preview-tab" id="tabCode" onclick="switchPreviewTab('code')">💻 查看代码</button>
+  <!-- ADD/EDIT CAT -->
+  <div class="modal-overlay" id="catModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="catModalTitle">新建分类</div>
+        <button class="modal-close" onclick="closeModal('catModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">分类名称 *</label>
+          <input class="form-input" id="catName" placeholder="例：Hero Section">
+        </div>
+        <div class="form-group">
+          <label class="form-label">图标 Emoji</label>
+          <input class="form-input" id="catEmoji" placeholder="例：🎨" maxlength="4">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal btn-cancel" onclick="closeModal('catModal')">取消</button>
+        <button class="btn-modal btn-confirm" onclick="saveCat()">保存</button>
+      </div>
     </div>
-    <button class="preview-copy-btn" id="previewCopyBtn" onclick="copyPreviewCode()">📋 一键复制全部代码</button>
-    <button class="preview-close" onclick="closePreview()">✕ 关闭</button>
   </div>
-  <div class="preview-body">
-    <div class="preview-iframe-wrap" id="previewIframeWrap">
-      <iframe id="previewIframe" sandbox="allow-scripts"></iframe>
-      <div class="screen-indicator" id="screenIndicator">🖥 全宽预览</div>
-    </div>
-    <div class="preview-code-wrap" id="previewCodeWrap" style="display:none">
-      <pre id="previewCodeContent"></pre>
+
+  <!-- IMPORT -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">导入数据</div>
+        <button class="modal-close" onclick="closeModal('importModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="import-tabs">
+          <button class="import-tab-btn active" onclick="switchImportTab('File',this)">📁 选择文件</button>
+          <button class="import-tab-btn" onclick="switchImportTab('Text',this)">📋 粘贴 JSON</button>
+        </div>
+        <div class="import-panel active" id="importFile">
+          <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()"
+            ondragover="fileDragOver(event)" ondragleave="fileDragLeave()" ondrop="fileDropped(event)">
+            <input type="file" id="fileInput" accept=".json" onchange="fileSelected(event)">
+            <div style="font-size:30px;margin-bottom:8px">📂</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">点击选择 .json 文件</div>
+            <div style="font-size:12px">或拖拽文件到此处</div>
+          </div>
+          <div id="fileInfo" style="margin-top:10px;font-size:12px;color:var(--green);display:none"></div>
+        </div>
+        <div class="import-panel" id="importText">
+          <textarea class="form-input code-area" id="importJson" placeholder="粘贴从导出功能得到的 JSON 内容…"
+            style="min-height:160px"></textarea>
+        </div>
+        <div
+          style="margin-top:12px;padding:10px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:12px;color:var(--orange)">
+          ⚠️ 导入会与现有数据<strong>合并</strong>，相同 ID 的片段将被覆盖，不会删除其他数据。
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal btn-cancel" onclick="closeModal('importModal')">取消</button>
+        <button class="btn-modal btn-confirm" onclick="doImport()">确认导入</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-// ══════════════════ DATA ══════════════════
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-const SK = 'sniplib_v3';
-let S = { categories:[], snippets:[], activeCat:'all' };
-let editSnipId = null, editCatId = null;
-let previewCode = '', currentView = 'grid';
-let importFileJson = null;
+  <!-- PREVIEW MODAL 全屏 -->
+  <div class="preview-modal-overlay" id="previewModal">
+    <div class="preview-topbar">
+      <div class="preview-title" id="previewTitle">预览</div>
+      <div class="preview-tabs">
+        <button class="preview-tab active" id="tabPreview" onclick="switchPreviewTab('preview')">👁 效果预览</button>
+        <button class="preview-tab" id="tabCode" onclick="switchPreviewTab('code')">💻 查看代码</button>
+      </div>
+      <button class="preview-copy-btn" id="previewCopyBtn" onclick="copyPreviewCode()">📋 一键复制全部代码</button>
+      <button class="preview-close" onclick="closePreview()">✕ 关闭</button>
+    </div>
+    <div class="preview-body">
+      <div class="preview-iframe-wrap" id="previewIframeWrap">
+        <iframe id="previewIframe" sandbox="allow-scripts"></iframe>
+        <div class="screen-indicator" id="screenIndicator">🖥 全宽预览</div>
+      </div>
+      <div class="preview-code-wrap" id="previewCodeWrap" style="display:none">
+        <pre id="previewCodeContent"></pre>
+      </div>
+    </div>
+  </div>
 
-const DEFAULT_CATS = [
-  {id:'cat_sections',name:'Sections',emoji:'📐',order:0},
-  {id:'cat_cards',name:'Cards',emoji:'🃏',order:1},
-  {id:'cat_hero',name:'Hero',emoji:'🦸',order:2},
-  {id:'cat_nav',name:'Navigation',emoji:'🧭',order:3}
-];
+  <script src="sync.js"></script>
+  <script>
+    // ══════════════════ DATA ══════════════════
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    const SK = 'sniplib_v3';
+    let S = { categories: [], snippets: [], activeCat: 'all' };
+    let editSnipId = null, editCatId = null;
+    let previewCode = '', currentView = 'grid';
+    let importFileJson = null;
 
-const DEMO_CODE = `<style>
+    const DEFAULT_CATS = [
+      { id: 'cat_sections', name: 'Sections', emoji: '📐', order: 0 },
+      { id: 'cat_cards', name: 'Cards', emoji: '🃏', order: 1 },
+      { id: 'cat_hero', name: 'Hero', emoji: '🦸', order: 2 },
+      { id: 'cat_nav', name: 'Navigation', emoji: '🧭', order: 3 }
+    ];
+
+    const DEMO_CODE = `<style>
 .ss *{margin:0;padding:0;box-sizing:border-box}
 .ss{font-family:'Segoe UI',Arial,sans-serif;background:#f5f6f8;padding:80px 0;width:100%}
 .sc{max-width:1400px;margin:0 auto;padding:0 20px}
@@ -396,77 +1294,77 @@ const DEMO_CODE = `<style>
 <div class="cta"><a href="#" class="bp">Get a Free Quote</a><a href="#" class="bs">View Projects</a></div>
 </div></section>`;
 
-const DEFAULT_SNIPPETS = [{
-  id:'snip_solutions',catId:'cat_sections',
-  name:'Solutions Cards Section',
-  desc:'三列卡片 Section，带高亮中间卡片，金色主题',
-  tags:['card','section','highlight','gold'],
-  code:DEMO_CODE,createdAt:Date.now()
-}];
+    const DEFAULT_SNIPPETS = [{
+      id: 'snip_solutions', catId: 'cat_sections',
+      name: 'Solutions Cards Section',
+      desc: '三列卡片 Section，带高亮中间卡片，金色主题',
+      tags: ['card', 'section', 'highlight', 'gold'],
+      code: DEMO_CODE, createdAt: Date.now()
+    }];
 
-// ══════════════════ STORAGE ══════════════════
-function load(){
-  try{
-    const r=localStorage.getItem(SK);
-    if(r){S=JSON.parse(r);}
-    else{S={categories:[...DEFAULT_CATS],snippets:[...DEFAULT_SNIPPETS],activeCat:'all'};save();}
-  }catch(err){S={categories:[...DEFAULT_CATS],snippets:[...DEFAULT_SNIPPETS],activeCat:'all'};}
-  if(!S.activeCat)S.activeCat='all';
-}
-function save(){localStorage.setItem(SK,JSON.stringify(S));}
+    // ══════════════════ STORAGE ══════════════════
+    function load() {
+      try {
+        const r = localStorage.getItem(SK);
+        if (r) { S = JSON.parse(r); }
+        else { S = { categories: [...DEFAULT_CATS], snippets: [...DEFAULT_SNIPPETS], activeCat: 'all' }; save(); }
+      } catch (err) { S = { categories: [...DEFAULT_CATS], snippets: [...DEFAULT_SNIPPETS], activeCat: 'all' }; }
+      if (!S.activeCat) S.activeCat = 'all';
+    }
+    function save() { localStorage.setItem(SK, JSON.stringify(S)); }
 
-// ══════════════════ SIDEBAR ══════════════════
-function renderSidebar(){
-  const list=document.getElementById('catList');
-  const cats=[...S.categories].sort((a,b)=>(a.order||0)-(b.order||0));
-  const all=S.snippets.length;
-  let h=`<div class="cat-item ${S.activeCat==='all'?'active':''}" onclick="selectCat('all')">
+    // ══════════════════ SIDEBAR ══════════════════
+    function renderSidebar() {
+      const list = document.getElementById('catList');
+      const cats = [...S.categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+      const all = S.snippets.length;
+      let h = `<div class="cat-item ${S.activeCat === 'all' ? 'active' : ''}" onclick="selectCat('all')">
     <span class="cat-emoji">📦</span><span class="cat-name">全部片段</span>
     <span class="cat-count">${all}</span></div>`;
-  cats.forEach(c=>{
-    const cnt=S.snippets.filter(s=>s.catId===c.id).length;
-    const act=S.activeCat===c.id;
-    h+=`<div class="cat-item ${act?'active':''}" data-id="${c.id}" draggable="true"
+      cats.forEach(c => {
+        const cnt = S.snippets.filter(s => s.catId === c.id).length;
+        const act = S.activeCat === c.id;
+        h += `<div class="cat-item ${act ? 'active' : ''}" data-id="${c.id}" draggable="true"
       ondragstart="cdStart(event,'${c.id}')" ondragover="cdOver(event,'${c.id}')"
       ondragleave="cdLeave(event)" ondrop="cdDrop(event,'${c.id}')" ondragend="cdEnd()"
       onclick="selectCat('${c.id}')">
       <span class="drag-handle" onmousedown="event.stopPropagation()">⠿</span>
-      <span class="cat-emoji">${esc(c.emoji||'📁')}</span>
+      <span class="cat-emoji">${esc(c.emoji || '📁')}</span>
       <span class="cat-name">${esc(c.name)}</span>
       <span class="cat-count">${cnt}</span>
       <div class="cat-actions" onclick="event.stopPropagation()">
         <button class="cat-btn" onclick="openEditCat('${c.id}')" title="重命名">✏️</button>
         <button class="cat-btn del" onclick="deleteCat('${c.id}')" title="删除">🗑</button>
       </div></div>`;
-  });
-  list.innerHTML=h;
-}
+      });
+      list.innerHTML = h;
+    }
 
-// ══════════════════ SNIPPETS RENDER ══════════════════
-function renderSnippets(){
-  const content=document.getElementById('content');
-  const q=document.getElementById('searchInput').value.toLowerCase().trim();
-  const catId=S.activeCat;
-  if(catId==='all'){document.getElementById('topbarTitle').textContent='全部片段';}
-  else{const c=S.categories.find(x=>x.id===catId);document.getElementById('topbarTitle').textContent=c?`${c.emoji} ${c.name}`:'片段';}
-  let snips=S.snippets;
-  if(catId!=='all')snips=snips.filter(s=>s.catId===catId);
-  if(q)snips=snips.filter(s=>s.name.toLowerCase().includes(q)||(s.desc||'').toLowerCase().includes(q)||(s.tags||[]).some(t=>t.toLowerCase().includes(q))||(s.code||'').toLowerCase().includes(q));
-  if(snips.length===0){
-    content.innerHTML=`<div class="empty-state"><div class="icon">🗂️</div><h3>暂无片段</h3><p>${q?'没有匹配的结果。':'点击右上角「＋ 添加片段」开始收藏代码。'}</p></div>`;
-    return;
-  }
-  const wc=currentView==='grid'?'snippets-grid':'snippets-list';
-  content.innerHTML=`<div class="${wc}">${snips.map(s=>buildCard(s)).join('')}</div>`;
-  lazyIframes();
-}
+    // ══════════════════ SNIPPETS RENDER ══════════════════
+    function renderSnippets() {
+      const content = document.getElementById('content');
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const catId = S.activeCat;
+      if (catId === 'all') { document.getElementById('topbarTitle').textContent = '全部片段'; }
+      else { const c = S.categories.find(x => x.id === catId); document.getElementById('topbarTitle').textContent = c ? `${c.emoji} ${c.name}` : '片段'; }
+      let snips = S.snippets;
+      if (catId !== 'all') snips = snips.filter(s => s.catId === catId);
+      if (q) snips = snips.filter(s => s.name.toLowerCase().includes(q) || (s.desc || '').toLowerCase().includes(q) || (s.tags || []).some(t => t.toLowerCase().includes(q)) || (s.code || '').toLowerCase().includes(q));
+      if (snips.length === 0) {
+        content.innerHTML = `<div class="empty-state"><div class="icon">🗂️</div><h3>暂无片段</h3><p>${q ? '没有匹配的结果。' : '点击右上角「＋ 添加片段」开始收藏代码。'}</p></div>`;
+        return;
+      }
+      const wc = currentView === 'grid' ? 'snippets-grid' : 'snippets-list';
+      content.innerHTML = `<div class="${wc}">${snips.map(s => buildCard(s)).join('')}</div>`;
+      lazyIframes();
+    }
 
-function buildCard(s){
-  const c=S.categories.find(x=>x.id===s.catId);
-  const cn=c?`${c.emoji} ${c.name}`:'未分类';
-  const tags=(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
-  const dt=s.createdAt?new Date(s.createdAt).toLocaleDateString('zh-CN'):'';
-  return `<div class="snippet-card" data-id="${s.id}">
+    function buildCard(s) {
+      const c = S.categories.find(x => x.id === s.catId);
+      const cn = c ? `${c.emoji} ${c.name}` : '未分类';
+      const tags = (s.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+      const dt = s.createdAt ? new Date(s.createdAt).toLocaleDateString('zh-CN') : '';
+      return `<div class="snippet-card" data-id="${s.id}">
     <div class="card-preview-wrap" id="pw-${s.id}">
       <div class="card-preview-placeholder" id="ph-${s.id}">
         <span class="preview-loading">⟳</span><span style="font-size:11px">加载预览…</span>
@@ -480,8 +1378,8 @@ function buildCard(s){
         <div class="card-title">${esc(s.name)}</div>
         <span class="card-cat-badge">${esc(cn)}</span>
       </div>
-      ${s.desc?`<div class="card-desc">${esc(s.desc)}</div>`:''}
-      ${tags?`<div class="card-tags">${tags}</div>`:''}
+      ${s.desc ? `<div class="card-desc">${esc(s.desc)}</div>` : ''}
+      ${tags ? `<div class="card-tags">${tags}</div>` : ''}
       <div class="card-footer">
         <span class="card-meta">${dt}</span>
         <div class="card-actions">
@@ -492,288 +1390,289 @@ function buildCard(s){
       </div>
     </div>
   </div>`;
-}
-
-// 懒加载 iframe
-const iObs=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting){
-      const id=e.target.id.replace('pw-','');
-      loadIframe(id);iObs.unobserve(e.target);
     }
-  });
-},{rootMargin:'120px'});
 
-function lazyIframes(){
-  document.querySelectorAll('[id^="pw-"]').forEach(el=>iObs.observe(el));
-}
+    // 懒加载 iframe
+    const iObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const id = e.target.id.replace('pw-', '');
+          loadIframe(id); iObs.unobserve(e.target);
+        }
+      });
+    }, { rootMargin: '120px' });
 
-function loadIframe(id){
-  const s=S.snippets.find(x=>x.id===id);if(!s)return;
-  const wrap=document.getElementById('pw-'+id);
-  const ph=document.getElementById('ph-'+id);
-  if(!wrap||wrap.querySelector('iframe'))return;
-  const iframe=document.createElement('iframe');
-  iframe.sandbox='allow-scripts';
-  const scale=currentView==='list'?0.333:0.5;
-  const pct=currentView==='list'?300:200;
-  iframe.style.cssText=`width:${pct}%;height:${pct}%;transform:scale(${scale});transform-origin:0 0;border:none;pointer-events:none;display:block`;
-  iframe.srcdoc=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;overflow:hidden}</style></head><body>${s.code}</body></html>`;
-  if(ph)ph.remove();
-  const overlay=wrap.querySelector('.card-preview-overlay');
-  wrap.insertBefore(iframe,overlay);
-}
+    function lazyIframes() {
+      document.querySelectorAll('[id^="pw-"]').forEach(el => iObs.observe(el));
+    }
 
-// ══════════════════ CAT ACTIONS ══════════════════
-function selectCat(id){S.activeCat=id;save();renderSidebar();renderSnippets();}
+    function loadIframe(id) {
+      const s = S.snippets.find(x => x.id === id); if (!s) return;
+      const wrap = document.getElementById('pw-' + id);
+      const ph = document.getElementById('ph-' + id);
+      if (!wrap || wrap.querySelector('iframe')) return;
+      const iframe = document.createElement('iframe');
+      iframe.sandbox = 'allow-scripts';
+      const scale = currentView === 'list' ? 0.333 : 0.5;
+      const pct = currentView === 'list' ? 300 : 200;
+      iframe.style.cssText = `width:${pct}%;height:${pct}%;transform:scale(${scale});transform-origin:0 0;border:none;pointer-events:none;display:block`;
+      iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;overflow:hidden}</style></head><body>${s.code}</body></html>`;
+      if (ph) ph.remove();
+      const overlay = wrap.querySelector('.card-preview-overlay');
+      wrap.insertBefore(iframe, overlay);
+    }
 
-function openAddCat(){
-  editCatId=null;
-  document.getElementById('catModalTitle').textContent='新建分类';
-  document.getElementById('catName').value='';
-  document.getElementById('catEmoji').value='';
-  openModal('catModal');
-}
-function openEditCat(id){
-  editCatId=id;
-  const c=S.categories.find(x=>x.id===id);if(!c)return;
-  document.getElementById('catModalTitle').textContent='重命名分类';
-  document.getElementById('catName').value=c.name;
-  document.getElementById('catEmoji').value=c.emoji||'';
-  openModal('catModal');
-}
-function saveCat(){
-  const name=document.getElementById('catName').value.trim();
-  const emoji=document.getElementById('catEmoji').value.trim()||rEmoji();
-  if(!name){toast('请输入分类名称','error');return;}
-  if(editCatId){
-    const c=S.categories.find(x=>x.id===editCatId);
-    if(c){c.name=name;c.emoji=emoji;}
-    toast('分类已更新','success');
-  }else{
-    const mo=S.categories.reduce((m,c)=>Math.max(m,c.order||0),0);
-    S.categories.push({id:'cat_'+Date.now(),name,emoji,order:mo+1});
-    toast('分类已创建','success');
-  }
-  save();closeModal('catModal');renderSidebar();
-}
-function deleteCat(id){
-  if(!confirm('删除此分类？该分类下的片段将变为未分类。'))return;
-  S.categories=S.categories.filter(c=>c.id!==id);
-  S.snippets.forEach(s=>{if(s.catId===id)s.catId=null;});
-  if(S.activeCat===id)S.activeCat='all';
-  save();renderSidebar();renderSnippets();toast('分类已删除','info');
-}
-function rEmoji(){const e=['🎨','🧩','🖼️','⚡','🌟','🔷','🎯','🛠️','💎','🚀','🌈','📌'];return e[Math.floor(Math.random()*e.length)];}
+    // ══════════════════ CAT ACTIONS ══════════════════
+    function selectCat(id) { S.activeCat = id; save(); renderSidebar(); renderSnippets(); }
 
-// drag
-let dCatId=null;
-function cdStart(e,id){dCatId=id;e.currentTarget.classList.add('dragging');}
-function cdOver(e,id){e.preventDefault();if(id!==dCatId)document.querySelector('[data-id="'+id+'"]')?.classList.add('drag-over');}
-function cdLeave(e){e.currentTarget.classList.remove('drag-over');}
-function cdDrop(e,tid){
-  e.preventDefault();if(!dCatId||dCatId===tid)return;
-  const f=S.categories.find(c=>c.id===dCatId),t=S.categories.find(c=>c.id===tid);
-  if(f&&t){const tmp=f.order;f.order=t.order;t.order=tmp;}
-  save();renderSidebar();
-}
-function cdEnd(){dCatId=null;document.querySelectorAll('.cat-item').forEach(el=>el.classList.remove('dragging','drag-over'));}
+    function openAddCat() {
+      editCatId = null;
+      document.getElementById('catModalTitle').textContent = '新建分类';
+      document.getElementById('catName').value = '';
+      document.getElementById('catEmoji').value = '';
+      openModal('catModal');
+    }
+    function openEditCat(id) {
+      editCatId = id;
+      const c = S.categories.find(x => x.id === id); if (!c) return;
+      document.getElementById('catModalTitle').textContent = '重命名分类';
+      document.getElementById('catName').value = c.name;
+      document.getElementById('catEmoji').value = c.emoji || '';
+      openModal('catModal');
+    }
+    function saveCat() {
+      const name = document.getElementById('catName').value.trim();
+      const emoji = document.getElementById('catEmoji').value.trim() || rEmoji();
+      if (!name) { toast('请输入分类名称', 'error'); return; }
+      if (editCatId) {
+        const c = S.categories.find(x => x.id === editCatId);
+        if (c) { c.name = name; c.emoji = emoji; }
+        toast('分类已更新', 'success');
+      } else {
+        const mo = S.categories.reduce((m, c) => Math.max(m, c.order || 0), 0);
+        S.categories.push({ id: 'cat_' + Date.now(), name, emoji, order: mo + 1 });
+        toast('分类已创建', 'success');
+      }
+      save(); closeModal('catModal'); renderSidebar();
+    }
+    function deleteCat(id) {
+      if (!confirm('删除此分类？该分类下的片段将变为未分类。')) return;
+      S.categories = S.categories.filter(c => c.id !== id);
+      S.snippets.forEach(s => { if (s.catId === id) s.catId = null; });
+      if (S.activeCat === id) S.activeCat = 'all';
+      save(); renderSidebar(); renderSnippets(); toast('分类已删除', 'info');
+    }
+    function rEmoji() { const e = ['🎨', '🧩', '🖼️', '⚡', '🌟', '🔷', '🎯', '🛠️', '💎', '🚀', '🌈', '📌']; return e[Math.floor(Math.random() * e.length)]; }
 
-// ══════════════════ SNIPPET ACTIONS ══════════════════
-function openAddSnippet(){
-  editSnipId=null;
-  document.getElementById('snippetModalTitle').textContent='添加代码片段';
-  ['sName','sDesc','sTags','sCode'].forEach(id=>document.getElementById(id).value='');
-  populateCatSel();openModal('snippetModal');
-}
-function openEditSnippet(id){
-  editSnipId=id;
-  const s=S.snippets.find(x=>x.id===id);if(!s)return;
-  document.getElementById('snippetModalTitle').textContent='编辑片段';
-  document.getElementById('sName').value=s.name;
-  document.getElementById('sDesc').value=s.desc||'';
-  document.getElementById('sTags').value=(s.tags||[]).join(', ');
-  document.getElementById('sCode').value=s.code;
-  populateCatSel(s.catId);openModal('snippetModal');
-}
-function populateCatSel(sel){
-  const el=document.getElementById('sCat');
-  const cats=[...S.categories].sort((a,b)=>(a.order||0)-(b.order||0));
-  el.innerHTML='<option value="">— 未分类 —</option>'+cats.map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${c.emoji} ${c.name}</option>`).join('');
-  if(!sel&&S.activeCat!=='all')el.value=S.activeCat;
-}
-function saveSnippet(){
-  const name=document.getElementById('sName').value.trim();
-  const code=document.getElementById('sCode').value.trim();
-  if(!name){toast('请输入片段名称','error');return;}
-  if(!code){toast('请输入代码','error');return;}
-  const catId=document.getElementById('sCat').value||null;
-  const desc=document.getElementById('sDesc').value.trim();
-  const tags=document.getElementById('sTags').value.split(',').map(t=>t.trim()).filter(Boolean);
-  if(editSnipId){
-    const s=S.snippets.find(x=>x.id===editSnipId);
-    if(s)Object.assign(s,{name,catId,desc,tags,code});
-    toast('片段已更新','success');
-  }else{
-    S.snippets.unshift({id:'snip_'+Date.now(),name,catId,desc,tags,code,createdAt:Date.now()});
-    toast('片段已添加','success');
-  }
-  save();closeModal('snippetModal');renderSidebar();renderSnippets();
-}
-function deleteSnippet(id){
-  if(!confirm('确认删除此片段？'))return;
-  S.snippets=S.snippets.filter(s=>s.id!==id);
-  save();renderSidebar();renderSnippets();toast('片段已删除','info');
-}
-function copySnippet(id){
-  const s=S.snippets.find(x=>x.id===id);if(!s)return;
-  navigator.clipboard.writeText(s.code).then(()=>{
-    const btn=document.getElementById('cb-'+id);
-    if(btn){btn.textContent='✅ 已复制';btn.classList.add('copied');setTimeout(()=>{btn.textContent='📋 一键复制';btn.classList.remove('copied');},2000);}
-    toast('代码已复制','success');
-  }).catch(()=>toast('复制失败','error'));
-}
+    // drag
+    let dCatId = null;
+    function cdStart(e, id) { dCatId = id; e.currentTarget.classList.add('dragging'); }
+    function cdOver(e, id) { e.preventDefault(); if (id !== dCatId) document.querySelector('[data-id="' + id + '"]')?.classList.add('drag-over'); }
+    function cdLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+    function cdDrop(e, tid) {
+      e.preventDefault(); if (!dCatId || dCatId === tid) return;
+      const f = S.categories.find(c => c.id === dCatId), t = S.categories.find(c => c.id === tid);
+      if (f && t) { const tmp = f.order; f.order = t.order; t.order = tmp; }
+      save(); renderSidebar();
+    }
+    function cdEnd() { dCatId = null; document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('dragging', 'drag-over')); }
 
-// ══════════════════ PREVIEW MODAL ══════════════════
-function openPreview(id){
-  const s=S.snippets.find(x=>x.id===id);if(!s)return;
-  previewCode=s.code;
-  document.getElementById('previewTitle').textContent=s.name;
-  document.getElementById('previewCopyBtn').textContent='📋 一键复制全部代码';
-  document.getElementById('previewCopyBtn').classList.remove('copied');
-  switchPreviewTab('preview');
-  const iframe=document.getElementById('previewIframe');
-  iframe.srcdoc=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0}</style></head><body>${s.code}</body></html>`;
-  const w=window.screen.width;
-  document.getElementById('screenIndicator').textContent=`🖥 ${w}px 全宽预览`;
-  document.getElementById('previewModal').classList.add('open');
-  document.body.style.overflow='hidden';
-}
-function closePreview(){
-  document.getElementById('previewModal').classList.remove('open');
-  document.body.style.overflow='';
-  setTimeout(()=>{document.getElementById('previewIframe').srcdoc='';},300);
-}
-function switchPreviewTab(tab){
-  const iw=document.getElementById('previewIframeWrap');
-  const cw=document.getElementById('previewCodeWrap');
-  const tp=document.getElementById('tabPreview');
-  const tc=document.getElementById('tabCode');
-  if(tab==='preview'){
-    iw.style.display='';cw.style.display='none';
-    tp.classList.add('active');tc.classList.remove('active');
-  }else{
-    iw.style.display='none';cw.style.display='';
-    tp.classList.remove('active');tc.classList.add('active');
-    document.getElementById('previewCodeContent').textContent=previewCode;
-  }
-}
-function copyPreviewCode(){
-  navigator.clipboard.writeText(previewCode).then(()=>{
-    const btn=document.getElementById('previewCopyBtn');
-    btn.textContent='✅ 已复制！';btn.classList.add('copied');
-    setTimeout(()=>{btn.textContent='📋 一键复制全部代码';btn.classList.remove('copied');},2000);
-    toast('代码已复制','success');
-  }).catch(()=>toast('复制失败','error'));
-}
+    // ══════════════════ SNIPPET ACTIONS ══════════════════
+    function openAddSnippet() {
+      editSnipId = null;
+      document.getElementById('snippetModalTitle').textContent = '添加代码片段';
+      ['sName', 'sDesc', 'sTags', 'sCode'].forEach(id => document.getElementById(id).value = '');
+      populateCatSel(); openModal('snippetModal');
+    }
+    function openEditSnippet(id) {
+      editSnipId = id;
+      const s = S.snippets.find(x => x.id === id); if (!s) return;
+      document.getElementById('snippetModalTitle').textContent = '编辑片段';
+      document.getElementById('sName').value = s.name;
+      document.getElementById('sDesc').value = s.desc || '';
+      document.getElementById('sTags').value = (s.tags || []).join(', ');
+      document.getElementById('sCode').value = s.code;
+      populateCatSel(s.catId); openModal('snippetModal');
+    }
+    function populateCatSel(sel) {
+      const el = document.getElementById('sCat');
+      const cats = [...S.categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+      el.innerHTML = '<option value="">— 未分类 —</option>' + cats.map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${c.emoji} ${c.name}</option>`).join('');
+      if (!sel && S.activeCat !== 'all') el.value = S.activeCat;
+    }
+    function saveSnippet() {
+      const name = document.getElementById('sName').value.trim();
+      const code = document.getElementById('sCode').value.trim();
+      if (!name) { toast('请输入片段名称', 'error'); return; }
+      if (!code) { toast('请输入代码', 'error'); return; }
+      const catId = document.getElementById('sCat').value || null;
+      const desc = document.getElementById('sDesc').value.trim();
+      const tags = document.getElementById('sTags').value.split(',').map(t => t.trim()).filter(Boolean);
+      if (editSnipId) {
+        const s = S.snippets.find(x => x.id === editSnipId);
+        if (s) Object.assign(s, { name, catId, desc, tags, code });
+        toast('片段已更新', 'success');
+      } else {
+        S.snippets.unshift({ id: 'snip_' + Date.now(), name, catId, desc, tags, code, createdAt: Date.now() });
+        toast('片段已添加', 'success');
+      }
+      save(); closeModal('snippetModal'); renderSidebar(); renderSnippets();
+    }
+    function deleteSnippet(id) {
+      if (!confirm('确认删除此片段？')) return;
+      S.snippets = S.snippets.filter(s => s.id !== id);
+      save(); renderSidebar(); renderSnippets(); toast('片段已删除', 'info');
+    }
+    function copySnippet(id) {
+      const s = S.snippets.find(x => x.id === id); if (!s) return;
+      navigator.clipboard.writeText(s.code).then(() => {
+        const btn = document.getElementById('cb-' + id);
+        if (btn) { btn.textContent = '✅ 已复制'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = '📋 一键复制'; btn.classList.remove('copied'); }, 2000); }
+        toast('代码已复制', 'success');
+      }).catch(() => toast('复制失败', 'error'));
+    }
 
-// ══════════════════ EXPORT / IMPORT ══════════════════
-function exportData(){
-  const data={version:3,exportedAt:new Date().toISOString(),categories:S.categories,snippets:S.snippets};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`sniplib-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();URL.revokeObjectURL(url);
-  toast(`已导出 ${S.categories.length} 分类 · ${S.snippets.length} 片段`,'success');
-}
-function openImport(){
-  document.getElementById('importJson').value='';
-  document.getElementById('fileInfo').style.display='none';
-  document.getElementById('fileInput').value='';
-  importFileJson=null;
-  openModal('importModal');
-}
-function switchImportTab(tab,btn){
-  document.querySelectorAll('.import-tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.import-panel').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('import'+tab).classList.add('active');
-}
-function fileDragOver(e){e.preventDefault();document.getElementById('fileDrop').classList.add('dragover');}
-function fileDragLeave(){document.getElementById('fileDrop').classList.remove('dragover');}
-function fileDropped(e){
-  e.preventDefault();document.getElementById('fileDrop').classList.remove('dragover');
-  const f=e.dataTransfer.files[0];if(f)readFile(f);
-}
-function fileSelected(e){const f=e.target.files[0];if(f)readFile(f);}
-function readFile(f){
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      importFileJson=JSON.parse(ev.target.result);
-      document.getElementById('fileInfo').style.display='block';
-      document.getElementById('fileInfo').textContent=`✅ 已读取：${importFileJson.snippets?.length||0} 个片段，${importFileJson.categories?.length||0} 个分类`;
-    }catch(e){toast('文件格式错误','error');}
-  };r.readAsText(f);
-}
-function doImport(){
-  let data=importFileJson;
-  if(!data){
-    try{data=JSON.parse(document.getElementById('importJson').value);}
-    catch(e){toast('JSON 格式错误','error');return;}
-  }
-  if(!data.snippets&&!data.categories){toast('无效的数据格式','error');return;}
-  let cc=0,sc=0;
-  (data.categories||[]).forEach(c=>{
-    const idx=S.categories.findIndex(x=>x.id===c.id);
-    if(idx>=0){S.categories[idx]=c;}else{S.categories.push(c);cc++;}
-  });
-  (data.snippets||[]).forEach(s=>{
-    const idx=S.snippets.findIndex(x=>x.id===s.id);
-    if(idx>=0){S.snippets[idx]=s;}else{S.snippets.unshift(s);sc++;}
-  });
-  save();closeModal('importModal');renderSidebar();renderSnippets();
-  toast(`导入完成：新增 ${cc} 分类，${sc} 片段`,'success');
-}
+    // ══════════════════ PREVIEW MODAL ══════════════════
+    function openPreview(id) {
+      const s = S.snippets.find(x => x.id === id); if (!s) return;
+      previewCode = s.code;
+      document.getElementById('previewTitle').textContent = s.name;
+      document.getElementById('previewCopyBtn').textContent = '📋 一键复制全部代码';
+      document.getElementById('previewCopyBtn').classList.remove('copied');
+      switchPreviewTab('preview');
+      const iframe = document.getElementById('previewIframe');
+      iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0}</style></head><body>${s.code}</body></html>`;
+      const w = window.screen.width;
+      document.getElementById('screenIndicator').textContent = `🖥 ${w}px 全宽预览`;
+      document.getElementById('previewModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closePreview() {
+      document.getElementById('previewModal').classList.remove('open');
+      document.body.style.overflow = '';
+      setTimeout(() => { document.getElementById('previewIframe').srcdoc = ''; }, 300);
+    }
+    function switchPreviewTab(tab) {
+      const iw = document.getElementById('previewIframeWrap');
+      const cw = document.getElementById('previewCodeWrap');
+      const tp = document.getElementById('tabPreview');
+      const tc = document.getElementById('tabCode');
+      if (tab === 'preview') {
+        iw.style.display = ''; cw.style.display = 'none';
+        tp.classList.add('active'); tc.classList.remove('active');
+      } else {
+        iw.style.display = 'none'; cw.style.display = '';
+        tp.classList.remove('active'); tc.classList.add('active');
+        document.getElementById('previewCodeContent').textContent = previewCode;
+      }
+    }
+    function copyPreviewCode() {
+      navigator.clipboard.writeText(previewCode).then(() => {
+        const btn = document.getElementById('previewCopyBtn');
+        btn.textContent = '✅ 已复制！'; btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = '📋 一键复制全部代码'; btn.classList.remove('copied'); }, 2000);
+        toast('代码已复制', 'success');
+      }).catch(() => toast('复制失败', 'error'));
+    }
 
-// ══════════════════ UTILS ══════════════════
-function setView(v){
-  currentView=v;
-  document.getElementById('viewGrid').classList.toggle('active',v==='grid');
-  document.getElementById('viewList').classList.toggle('active',v==='list');
-  renderSnippets();
-}
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-function toast(msg,type='info'){
-  const wrap=document.getElementById('toastWrap');
-  const el=document.createElement('div');
-  el.className=`toast ${type}`;
-  const icons={success:'✅',error:'❌',info:'ℹ️'};
-  el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
-  wrap.appendChild(el);
-  requestAnimationFrame(()=>el.classList.add('show'));
-  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),400);},2800);
-}
+    // ══════════════════ EXPORT / IMPORT ══════════════════
+    function exportData() {
+      const data = { version: 3, exportedAt: new Date().toISOString(), categories: S.categories, snippets: S.snippets };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `sniplib-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click(); URL.revokeObjectURL(url);
+      toast(`已导出 ${S.categories.length} 分类 · ${S.snippets.length} 片段`, 'success');
+    }
+    function openImport() {
+      document.getElementById('importJson').value = '';
+      document.getElementById('fileInfo').style.display = 'none';
+      document.getElementById('fileInput').value = '';
+      importFileJson = null;
+      openModal('importModal');
+    }
+    function switchImportTab(tab, btn) {
+      document.querySelectorAll('.import-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.import-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('import' + tab).classList.add('active');
+    }
+    function fileDragOver(e) { e.preventDefault(); document.getElementById('fileDrop').classList.add('dragover'); }
+    function fileDragLeave() { document.getElementById('fileDrop').classList.remove('dragover'); }
+    function fileDropped(e) {
+      e.preventDefault(); document.getElementById('fileDrop').classList.remove('dragover');
+      const f = e.dataTransfer.files[0]; if (f) readFile(f);
+    }
+    function fileSelected(e) { const f = e.target.files[0]; if (f) readFile(f); }
+    function readFile(f) {
+      const r = new FileReader();
+      r.onload = ev => {
+        try {
+          importFileJson = JSON.parse(ev.target.result);
+          document.getElementById('fileInfo').style.display = 'block';
+          document.getElementById('fileInfo').textContent = `✅ 已读取：${importFileJson.snippets?.length || 0} 个片段，${importFileJson.categories?.length || 0} 个分类`;
+        } catch (e) { toast('文件格式错误', 'error'); }
+      }; r.readAsText(f);
+    }
+    function doImport() {
+      let data = importFileJson;
+      if (!data) {
+        try { data = JSON.parse(document.getElementById('importJson').value); }
+        catch (e) { toast('JSON 格式错误', 'error'); return; }
+      }
+      if (!data.snippets && !data.categories) { toast('无效的数据格式', 'error'); return; }
+      let cc = 0, sc = 0;
+      (data.categories || []).forEach(c => {
+        const idx = S.categories.findIndex(x => x.id === c.id);
+        if (idx >= 0) { S.categories[idx] = c; } else { S.categories.push(c); cc++; }
+      });
+      (data.snippets || []).forEach(s => {
+        const idx = S.snippets.findIndex(x => x.id === s.id);
+        if (idx >= 0) { S.snippets[idx] = s; } else { S.snippets.unshift(s); sc++; }
+      });
+      save(); closeModal('importModal'); renderSidebar(); renderSnippets();
+      toast(`导入完成：新增 ${cc} 分类，${sc} 片段`, 'success');
+    }
 
-// ESC closes modals
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){
-    if(document.getElementById('previewModal').classList.contains('open')){closePreview();return;}
-    ['snippetModal','catModal','importModal'].forEach(id=>{
-      if(document.getElementById(id).classList.contains('open'))closeModal(id);
+    // ══════════════════ UTILS ══════════════════
+    function setView(v) {
+      currentView = v;
+      document.getElementById('viewGrid').classList.toggle('active', v === 'grid');
+      document.getElementById('viewList').classList.toggle('active', v === 'list');
+      renderSnippets();
+    }
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function toast(msg, type = 'info') {
+      const wrap = document.getElementById('toastWrap');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+      el.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${msg}</span>`;
+      wrap.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 2800);
+    }
+
+    // ESC closes modals
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        if (document.getElementById('previewModal').classList.contains('open')) { closePreview(); return; }
+        ['snippetModal', 'catModal', 'importModal'].forEach(id => {
+          if (document.getElementById(id).classList.contains('open')) closeModal(id);
+        });
+      }
     });
-  }
-});
-// click overlay to close
-document.querySelectorAll('.modal-overlay').forEach(el=>{
-  el.addEventListener('click',e=>{if(e.target===el)closeModal(el.id);});
-});
-document.getElementById('previewModal').addEventListener('click',e=>{if(e.target.id==='previewModal')closePreview();});
+    // click overlay to close
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+      el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
+    });
+    document.getElementById('previewModal').addEventListener('click', e => { if (e.target.id === 'previewModal') closePreview(); });
 
-// INIT
-load();renderSidebar();renderSnippets();
-</script>
+    // INIT
+    load(); renderSidebar(); renderSnippets();
+  </script>
 </body>
+
 </html>
