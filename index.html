@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的工具集</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e5e5e5;
+      padding: 20px 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1d1d1f;
+    }
+
+    .header p {
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .main {
+      flex: 1;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .tool-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tool-card:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      border-color: #6c47ff;
+      transform: translateY(-2px);
+    }
+
+    .tool-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .tool-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1d1d1f;
+    }
+
+    .tool-desc {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    .tool-tag {
+      display: inline-block;
+      background: #f0eeff;
+      color: #6c47ff;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 500;
+      align-self: flex-start;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 16px 20px;
+      font-size: 11px;
+      color: #bbb;
+      border-top: 1px solid #e5e5e5;
+      background: #fff;
+    }
+
+    @media (max-width: 500px) {
+      .header {
+        padding: 16px 16px;
+      }
+
+      .header h1 {
+        font-size: 18px;
+      }
+
+      .main {
+        padding: 16px 12px;
+      }
+
+      .tool-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <h1>🛠️ 我的工具集</h1>
+    <p>日常使用的在线小工具，点击即可打开</p>
+  </div>
+
+  <div class="main">
+    <div class="tool-grid" id="toolGrid"></div>
+  </div>
+
+  <script>
+    // ===== 工具列表配置 =====
+    // 新增工具只需在此数组中添加一条即可，首页会自动渲染
+    const tools = [
+      {
+        icon: '📚',
+        name: '提示词管理工具',
+        desc: '管理 AI 提示词，支持分类、搜索、收藏、导出导入',
+        tag: '效率工具',
+        href: '/tools/提示词工具.html'
+      },
+      {
+        icon: '🔗',
+        name: 'R2 文件链接生成器',
+        desc: '批量生成 Cloudflare R2 文件链接，支持多配置管理',
+        tag: '文件管理',
+        href: '/tools/R2 文件链接生成器（配置管理版）.html'
+      },
+      {
+        icon: '🎨',
+        name: '样式代码库',
+        desc: '管理和收藏代码片段，支持分类、搜索、快速复制',
+        tag: '开发工具',
+        href: '/tools/样式代码库.html'
+      },
+      {
+        icon: '🏗️',
+        name: '工程记录卡片生成器',
+        desc: '填写信息实时预览，一键导出圆角透明 PNG 水印卡片',
+        tag: '图片工具',
+        href: '/tools/engineering-record-card.html'
+      }
+    ];
+
+    // 自动渲染工具卡片
+    const grid = document.getElementById('toolGrid');
+    tools.forEach(t => {
+      const a = document.createElement('a');
+      a.className = 'tool-card';
+      a.href = t.href;
+      a.innerHTML = `
+    <div class="tool-icon">${t.icon}</div>
+    <div class="tool-name">${t.name}</div>
+    <div class="tool-desc">${t.desc}</div>
+    <span class="tool-tag">${t.tag}</span>
+  `;
+      grid.appendChild(a);
+    });
+  </script>
+
+  <div class="footer">
+    部署于 Cloudflare Pages
+  </div>
+
+</body>
+
+</html>

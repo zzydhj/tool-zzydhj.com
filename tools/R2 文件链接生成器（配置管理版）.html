@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>R2 文件链接生成器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; padding: 24px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card-title { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+    label { font-size: 13px; color: #555; margin-bottom: 4px; display: block; }
+    input, select { width: 100%; padding: 9px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; color: #333; outline: none; transition: border 0.2s; background: #fff; }
+    input:focus, select:focus { border-color: #4f46e5; }
+    .btn { padding: 9px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .btn-primary { background: #4f46e5; color: #fff; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-primary:disabled { background: #a5b4fc; cursor: not-allowed; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #fee2e2; color: #dc2626; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+    .status { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
+    .status.loading { background: #eff6ff; color: #3b82f6; display: block; }
+    .status.success { background: #f0fdf4; color: #16a34a; display: block; }
+    .status.error { background: #fef2f2; color: #dc2626; display: block; }
+    .result-area { width: 100%; min-height: 200px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; font-family: 'Courier New', monospace; color: #333; resize: vertical; outline: none; line-height: 1.6; }
+    .result-area:focus { border-color: #4f46e5; }
+    .stats { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .stat-item { background: #f8f9ff; border-radius: 8px; padding: 8px 14px; font-size: 13px; color: #4f46e5; font-weight: 600; }
+    .stat-item span { color: #888; font-weight: 400; margin-right: 4px; }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 12px; max-height: 320px; overflow-y: auto; }
+    .preview-item { text-align: center; cursor: pointer; }
+    .preview-item img { width: 80px; height: 80px; object-fit: contain; border: 1px solid #eee; border-radius: 8px; padding: 6px; background: #fafafa; }
+    .preview-item p { font-size: 11px; color: #666; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tab-row { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+    .tab { padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #e0e0e0; background: #fff; color: #555; transition: all 0.15s; }
+    .tab.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    hr.divider { border: none; border-top: 1px solid #f0f0f0; margin: 4px 0 14px; }
+
+    /* 下拉选择器组件 */
+    .select-group { display: flex; gap: 6px; align-items: center; }
+    .select-group select { flex: 1; }
+    .select-group .btn { padding: 9px 12px; flex-shrink: 0; }
+
+    /* 管理弹窗 */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; }
+    .modal { background: #fff; border-radius: 14px; padding: 24px; width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+    .modal-title { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-close { cursor: pointer; font-size: 20px; color: #aaa; line-height: 1; background: none; border: none; }
+    .modal-close:hover { color: #333; }
+    .item-list { margin-bottom: 14px; }
+    .item-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #f0f0f0; border-radius: 8px; margin-bottom: 6px; background: #fafafa; }
+    .item-row .item-label { flex: 1; font-size: 13px; color: #333; font-weight: 600; }
+    .item-row .item-value { flex: 2; font-size: 12px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .add-form { display: grid; gap: 8px; padding: 14px; background: #f8f9ff; border-radius: 10px; border: 1px dashed #c7d2fe; }
+    .add-form-title { font-size: 13px; font-weight: 600; color: #4f46e5; margin-bottom: 2px; }
+    .add-form input { background: #fff; }
+    .empty-tip { text-align: center; color: #bbb; font-size: 13px; padding: 20px 0; }
+    .tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #ede9fe; color: #7c3aed; margin-left: 4px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>☁️ R2 文件链接生成器</h1>
+
+  <!-- 主配置 -->
+  <div class="card">
+    <div class="card-title">⚙️ 基础配置</div>
+    <div class="form-row">
+      <div>
+        <label>Worker API 地址</label>
+        <input id="workerUrl" value="https://r2-list.zzydhj.workers.dev/" placeholder="https://your-worker.workers.dev/">
+      </div>
+      <div>
+        <label>Auth Token</label>
+        <input id="authToken" type="password" value="zxcvbnm@" placeholder="鉴权 Token">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <!-- 存储桶 + 前缀 -->
+      <div>
+        <label>存储桶 / 前缀 <span class="tag">可管理</span></label>
+        <div class="select-group">
+          <select id="bucketSelect" onchange="onBucketChange()">
+            <option value="">-- 请选择或手动输入 --</option>
+          </select>
+          <button class="btn btn-secondary" onclick="openModal('bucket')" title="管理列表">⚙️</button>
+        </div>
+        <input id="bucketInput" placeholder="存储桶名称" style="margin-top:6px" oninput="syncBucketInput()">
+        <input id="prefixInput" placeholder="前缀路径，如 customer-logo/" style="margin-top:6px">
+      </div>
+
+      <!-- 公开域名 -->
+      <div>
+        <label>公开访问域名 <span class="tag">可管理</span></label>
+        <div class="select-group">
+          <select id="domainSelect" onchange="onDomainChange()">
+            <option value="">-- 请选择或手动输入 --</option>
+          </select>
+          <button class="btn btn-secondary" onclick="openModal('domain')" title="管理列表">⚙️</button>
+        </div>
+        <input id="domainInput" placeholder="https://cdn.example.com" style="margin-top:6px" oninput="syncDomainInput()">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="fetchFileList()" id="fetchBtn">🚀 拉取文件列表</button>
+      <button class="btn btn-secondary" onclick="clearAll()">🗑️ 清空结果</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- 结果区 -->
+  <div class="card" id="resultCard" style="display:none">
+    <div class="card-title">📋 生成结果</div>
+    <div class="stats" id="stats"></div>
+    <hr class="divider">
+    <div class="tab-row">
+      <div class="tab active" onclick="switchTab('urls',this)">URL 列表</div>
+      <div class="tab" onclick="switchTab('csv',this)">CSV</div>
+      <div class="tab" onclick="switchTab('json',this)">JSON</div>
+      <div class="tab" onclick="switchTab('markdown',this)">Markdown</div>
+      <div class="tab" onclick="switchTab('img',this)">IMG 标签</div>
+      <div class="tab" onclick="switchTab('preview',this)">🖼️ 预览</div>
+    </div>
+    <div id="outputArea">
+      <textarea class="result-area" id="resultText" readonly></textarea>
+      <div class="btn-row">
+        <button class="btn btn-success" onclick="copyResult()">📋 复制</button>
+        <button class="btn btn-secondary" onclick="downloadResult()">⬇️ 下载</button>
+      </div>
+    </div>
+    <div id="previewArea" style="display:none">
+      <div class="preview-grid" id="previewGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理弹窗 -->
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modalTitle">管理列表</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+
+    <div class="item-list" id="itemList"></div>
+
+    <div class="add-form" id="addForm">
+      <div class="add-form-title">➕ 添加新选项</div>
+      <input id="addLabel" placeholder="显示名称（如：通盛手表 - 客户Logo）">
+      <input id="addValue1" placeholder="" id="addValue1">
+      <input id="addValue2" placeholder="前缀路径（如：customer-logo/）" id="addValue2" style="display:none">
+      <button class="btn btn-primary" onclick="addItem()" style="width:100%">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let fileList = [];
+  let currentTab = 'urls';
+  let currentModal = ''; // 'bucket' | 'domain'
+
+  // ── localStorage 操作 ────────────────────────────────
+  function loadData(key) {
+    try { return JSON.parse(localStorage.getItem(key)) || []; }
+    catch { return []; }
+  }
+  function saveData(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  // ── 初始化：填充下拉列表 ─────────────────────────────
+  function initSelects() {
+    const buckets = loadData('r2_buckets');
+    const domains = loadData('r2_domains');
+
+    const bSel = document.getElementById('bucketSelect');
+    const dSel = document.getElementById('domainSelect');
+
+    // 清空重建
+    bSel.innerHTML = '<option value="">-- 请选择或手动输入 --</option>';
+    dSel.innerHTML = '<option value="">-- 请选择或手动输入 --</option>';
+
+    buckets.forEach((item, i) => {
+      const opt = new Option(`${item.label}`, i);
+      bSel.appendChild(opt);
+    });
+    domains.forEach((item, i) => {
+      const opt = new Option(`${item.label}  (${item.value})`, i);
+      dSel.appendChild(opt);
+    });
+  }
+
+  function onBucketChange() {
+    const idx = document.getElementById('bucketSelect').value;
+    if (idx === '') return;
+    const buckets = loadData('r2_buckets');
+    const item = buckets[parseInt(idx)];
+    if (item) {
+      document.getElementById('bucketInput').value = item.bucket || '';
+      document.getElementById('prefixInput').value = item.prefix || '';
+    }
+  }
+
+  function onDomainChange() {
+    const idx = document.getElementById('domainSelect').value;
+    if (idx === '') return;
+    const domains = loadData('r2_domains');
+    const item = domains[parseInt(idx)];
+    if (item) {
+      document.getElementById('domainInput').value = item.value || '';
+    }
+  }
+
+  function syncBucketInput() {
+    document.getElementById('bucketSelect').value = '';
+  }
+  function syncDomainInput() {
+    document.getElementById('domainSelect').value = '';
+  }
+
+  // ── 弹窗 ─────────────────────────────────────────────
+  function openModal(type) {
+    currentModal = type;
+    document.getElementById('modalOverlay').style.display = 'flex';
+    document.getElementById('addLabel').value = '';
+    document.getElementById('addValue1').value = '';
+    document.getElementById('addValue2').value = '';
+
+    if (type === 'bucket') {
+      document.getElementById('modalTitle').textContent = '管理存储桶 / 前缀列表';
+      document.getElementById('addValue1').placeholder = '存储桶名称（如：tongshengwatch）';
+      document.getElementById('addValue2').style.display = 'block';
+      document.getElementById('addValue2').placeholder = '前缀路径（如：customer-logo/）';
+    } else {
+      document.getElementById('modalTitle').textContent = '管理公开域名列表';
+      document.getElementById('addValue1').placeholder = '域名（如：https://tongshengwatch.zzydhj.com）';
+      document.getElementById('addValue2').style.display = 'none';
+    }
+    renderItemList();
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').style.display = 'none';
+    initSelects();
+  }
+
+  function closeModalOutside(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  }
+
+  function renderItemList() {
+    const key = currentModal === 'bucket' ? 'r2_buckets' : 'r2_domains';
+    const items = loadData(key);
+    const container = document.getElementById('itemList');
+
+    if (items.length === 0) {
+      container.innerHTML = '<div class="empty-tip">暂无保存的选项，请在下方添加</div>';
+      return;
+    }
+
+    container.innerHTML = items.map((item, i) => `
+      <div class="item-row">
+        <div class="item-label">${item.label}</div>
+        <div class="item-value">${currentModal === 'bucket' ? (item.bucket + ' / ' + (item.prefix || '根目录')) : item.value}</div>
+        <button class="btn btn-danger" onclick="deleteItem(${i})" style="padding:5px 10px;font-size:12px">删除</button>
+      </div>
+    `).join('');
+  }
+
+  function addItem() {
+    const label = document.getElementById('addLabel').value.trim();
+    const val1 = document.getElementById('addValue1').value.trim();
+    const val2 = document.getElementById('addValue2').value.trim();
+
+    if (!label || !val1) {
+      alert('请填写名称和值');
+      return;
+    }
+
+    const key = currentModal === 'bucket' ? 'r2_buckets' : 'r2_domains';
+    const items = loadData(key);
+
+    if (currentModal === 'bucket') {
+      items.push({ label, bucket: val1, prefix: val2 });
+    } else {
+      items.push({ label, value: val1 });
+    }
+
+    saveData(key, items);
+    document.getElementById('addLabel').value = '';
+    document.getElementById('addValue1').value = '';
+    document.getElementById('addValue2').value = '';
+    renderItemList();
+  }
+
+  function deleteItem(idx) {
+    if (!confirm('确认删除这条记录？')) return;
+    const key = currentModal === 'bucket' ? 'r2_buckets' : 'r2_domains';
+    const items = loadData(key);
+    items.splice(idx, 1);
+    saveData(key, items);
+    renderItemList();
+  }
+
+  // ── 拉取文件 ─────────────────────────────────────────
+  async function fetchFileList() {
+    const workerUrl = document.getElementById('workerUrl').value.trim().replace(/\/$/, '');
+    const token = document.getElementById('authToken').value.trim();
+    const bucket = document.getElementById('bucketInput').value.trim();
+    const prefix = document.getElementById('prefixInput').value.trim();
+
+    if (!workerUrl || !bucket) {
+      showStatus('error', '请填写 Worker 地址和存储桶名称');
+      return;
+    }
+
+    const btn = document.getElementById('fetchBtn');
+    btn.disabled = true;
+    showStatus('loading', '⏳ 正在拉取文件列表...');
+
+    try {
+      const url = `${workerUrl}/?bucket=${encodeURIComponent(bucket)}&prefix=${encodeURIComponent(prefix)}&token=${encodeURIComponent(token)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+
+      fileList = (data.files || []).filter(f => !f.endsWith('/'));
+      showStatus('success', `✅ 成功拉取 ${fileList.length} 个文件`);
+      renderResult();
+      document.getElementById('resultCard').style.display = 'block';
+    } catch (err) {
+      showStatus('error', `❌ 拉取失败：${err.message}`);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── 结果渲染 ─────────────────────────────────────────
+  function getPublicUrl(filePath) {
+    const domain = document.getElementById('domainInput').value.trim().replace(/\/$/, '');
+    return `${domain}/${filePath}`;
+  }
+
+  function generateContent(tab) {
+    const prefix = document.getElementById('prefixInput').value.trim();
+    switch (tab) {
+      case 'urls': return fileList.map(f => getPublicUrl(f)).join('\n');
+      case 'csv':
+        return ['filename,url', ...fileList.map(f => `${f.replace(prefix,'')} ,${getPublicUrl(f)}`)].join('\n');
+      case 'json':
+        return JSON.stringify(fileList.map(f => ({ filename: f.replace(prefix,''), path: f, url: getPublicUrl(f) })), null, 2);
+      case 'markdown':
+        return fileList.map(f => `![${f.replace(prefix,'').replace(/\.[^.]+$/,'')}](${getPublicUrl(f)})`).join('\n');
+      case 'img':
+        return fileList.map(f => `<img src="${getPublicUrl(f)}" alt="${f.replace(prefix,'').replace(/\.[^.]+$/,'')}">`).join('\n');
+      default: return '';
+    }
+  }
+
+  function renderResult() {
+    const bucket = document.getElementById('bucketInput').value.trim();
+    const prefix = document.getElementById('prefixInput').value.trim();
+    document.getElementById('stats').innerHTML = `
+      <div class="stat-item"><span>存储桶</span>${bucket}</div>
+      <div class="stat-item"><span>前缀</span>${prefix || '（根目录）'}</div>
+      <div class="stat-item"><span>文件数</span>${fileList.length}</div>
+    `;
+    if (currentTab !== 'preview') {
+      document.getElementById('resultText').value = generateContent(currentTab);
+    } else {
+      renderPreview();
+    }
+  }
+
+  function switchTab(tab, el) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (tab === 'preview') {
+      document.getElementById('outputArea').style.display = 'none';
+      document.getElementById('previewArea').style.display = 'block';
+      renderPreview();
+    } else {
+      document.getElementById('outputArea').style.display = 'block';
+      document.getElementById('previewArea').style.display = 'none';
+      document.getElementById('resultText').value = generateContent(tab);
+    }
+  }
+
+  function renderPreview() {
+    const prefix = document.getElementById('prefixInput').value.trim();
+    document.getElementById('previewGrid').innerHTML = fileList.map(f => {
+      const name = f.replace(prefix, '').replace(/\.[^.]+$/, '');
+      const url = getPublicUrl(f);
+      return `<div class="preview-item" onclick="navigator.clipboard.writeText('${url}')">
+        <img src="${url}" alt="${name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect width=%2280%22 height=%2280%22 fill=%22%23f3f4f6%22/><text x=%2240%22 y=%2245%22 text-anchor=%22middle%22 fill=%22%23aaa%22 font-size=%2212%22>ERR</text></svg>'">
+        <p title="${name}">${name}</p>
+      </div>`;
+    }).join('');
+  }
+
+  function copyResult() {
+    navigator.clipboard.writeText(document.getElementById('resultText').value)
+      .then(() => showStatus('success', '✅ 已复制到剪贴板'));
+  }
+
+  function downloadResult() {
+    const ext = { urls:'txt', csv:'csv', json:'json', markdown:'md', img:'html' };
+    const blob = new Blob([document.getElementById('resultText').value], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `r2-links.${ext[currentTab]||'txt'}`;
+    a.click();
+  }
+
+  function clearAll() {
+    fileList = [];
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('status').style.display = 'none';
+  }
+
+  function showStatus(type, msg) {
+    const el = document.getElementById('status');
+    el.className = `status ${type}`;
+    el.textContent = msg;
+  }
+
+  // ── 启动 ─────────────────────────────────────────────
+  initSelects();
+
+  // 预置一条默认数据（首次使用）
+  if (loadData('r2_buckets').length === 0) {
+    saveData('r2_buckets', [{ label: '通盛手表 - 客户Logo', bucket: 'tongshengwatch', prefix: 'customer-logo/' }]);
+  }
+  if (loadData('r2_domains').length === 0) {
+    saveData('r2_domains', [{ label: '通盛手表', value: 'https://tongshengwatch.zzydhj.com' }]);
+  }
+  initSelects();
+</script>
+</body>
+</html>

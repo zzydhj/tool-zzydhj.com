@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提示词管理工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; font-size: 13px; }
+
+  .header { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 10px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 16px; font-weight: 700; color: #1d1d1f; white-space: nowrap; }
+  .header-actions { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 7px; border: none; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+  .btn-primary { background: #6c47ff; color: #fff; }
+  .btn-primary:hover { background: #5a38e0; }
+  .btn-secondary { background: #f0f0f0; color: #333; }
+  .btn-secondary:hover { background: #e0e0e0; }
+  .btn-success { background: #34c759; color: #fff; }
+  .btn-success:hover { background: #28a745; }
+  .btn-danger { background: #ff3b30; color: #fff; }
+  .btn-danger:hover { background: #e0322a; }
+  .btn-sm { padding: 4px 8px; font-size: 11px; }
+  .btn-warning { background: #ff9500; color: #fff; }
+  .btn-warning:hover { background: #e08500; }
+
+  .search-bar { flex: 1; max-width: 320px; position: relative; }
+  .search-bar input { width: 100%; padding: 6px 10px 6px 30px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; background: #f5f5f7; outline: none; }
+  .search-bar input:focus { border-color: #6c47ff; background: #fff; }
+  .search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #999; font-size: 13px; pointer-events: none; }
+  .search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: none; background: none; border: none; cursor: pointer; color: #999; font-size: 14px; padding: 2px 4px; border-radius: 50%; line-height: 1; transition: all 0.15s; }
+  .search-clear:hover { background: #e0e0e0; color: #555; }
+  .search-clear.visible { display: block; }
+
+  .column-selector { display: flex; align-items: center; gap: 4px; margin: 0 8px; }
+  .column-selector label { font-size: 11px; color: #888; font-weight: 500; }
+  .column-selector select { font-size: 11px; padding: 3px 6px; border: 1px solid #ddd; border-radius: 6px; background: #f5f5f7; outline: none; cursor: pointer; font-family: inherit; }
+  .column-selector select:focus { border-color: #6c47ff; }
+
+  .tabs-bar-wrapper { background: #fff; border-bottom: 1px solid #e5e5e5; position: sticky; top: 52px; z-index: 99; overflow: hidden; }
+  .tabs-bar { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 0 20px; cursor: default; user-select: none; scroll-behavior: smooth; }
+  .tabs-bar::-webkit-scrollbar { display: none; }
+  .tabs-bar.dragging-tab { cursor: grabbing; }
+  .tab { padding: 8px 12px; border-radius: 0; border: none; background: none; cursor: pointer; font-size: 12px; font-weight: 500; color: #666; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.15s; flex-shrink: 0; }
+  .tab:hover { color: #6c47ff; }
+  .tab.active { color: #6c47ff; border-bottom-color: #6c47ff; }
+  .tab.tab-dragging { opacity: 0.4; }
+  .tab.tab-drag-over { border-bottom-color: #6c47ff; background: rgba(108,71,255,0.08); }
+  .tab.tab-long-press-ready { border-bottom-color: #6c47ff; background: rgba(108,71,255,0.12); cursor: grab; }
+  .tab-add { color: #6c47ff; font-size: 16px; font-weight: 700; padding: 6px 8px; flex-shrink: 0; }
+
+  .main { padding: 12px 20px; }
+
+  .section { margin-bottom: 16px; }
+  .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 4px 0; }
+  .section-title { font-size: 13px; font-weight: 700; color: #555; display: flex; align-items: center; gap: 6px; position: relative; }
+  .section-title .title-text { cursor: default; }
+  .section-title .title-edit-btn { display: none; font-size: 12px; background: none; border: none; cursor: pointer; color: #bbb; padding: 0 2px; border-radius: 3px; transition: color 0.15s; line-height: 1; }
+  .section-title:hover .title-edit-btn { display: inline-flex; }
+  .section-title .title-edit-btn:hover { color: #6c47ff; background: #f0eeff; }
+  .section-title .title-input { display: none; font: inherit; font-size: 13px; font-weight: 700; border: 1px solid #6c47ff; border-radius: 5px; padding: 1px 6px; outline: none; background: #fff; width: auto; min-width: 80px; max-width: 200px; }
+  .section-title.editing .title-text { display: none; }
+  .section-title.editing .title-edit-btn { display: none; }
+  .section-title.editing .title-input { display: inline-block; }
+  .section-count { background: #e8e3ff; color: #6c47ff; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+  .section-fav .section-title { color: #ff9500; }
+  .section-fav .section-count { background: #fff3e0; color: #ff9500; }
+
+  .prompt-list { display: grid; gap: 6px; }
+
+  .prompt-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; transition: box-shadow 0.15s, border-color 0.15s; cursor: default; user-select: none; min-width: 0; }
+  .prompt-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-color: #d0d0d0; }
+  .prompt-card.dragging { opacity: 0.4; border: 2px dashed #6c47ff; }
+  .prompt-card.drag-over { border-color: #6c47ff; box-shadow: 0 0 0 2px rgba(108,71,255,0.2); }
+  .prompt-card.long-press-ready { border-color: #6c47ff; box-shadow: 0 0 0 3px rgba(108,71,255,0.25); cursor: grab; }
+
+  .drag-handle { color: #ccc; font-size: 14px; cursor: grab; flex-shrink: 0; transition: color 0.15s; padding: 2px; }
+  .drag-handle:hover { color: #999; }
+  .drag-handle.active { color: #6c47ff; cursor: grabbing; }
+
+  .card-body { flex: 1; min-width: 0; }
+  .card-name { font-size: 13px; font-weight: 600; color: #1d1d1f; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-desc { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-tag { display: inline-block; background: #f0eeff; color: #6c47ff; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 500; margin-top: 3px; }
+
+  .card-actions { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+
+  .copy-btn { background: #6c47ff; color: #fff; border: none; border-radius: 7px; padding: 6px 18px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+  .copy-btn:hover { background: #5a38e0; transform: scale(1.03); }
+  .copy-btn.copied { background: #34c759; }
+
+  .action-icon-row { display: flex; align-items: center; gap: 2px; }
+
+  .icon-btn { background: none; border: none; cursor: pointer; padding: 3px; border-radius: 5px; font-size: 14px; transition: all 0.15s; color: #bbb; line-height: 1; }
+  .icon-btn:hover { background: #f0f0f0; color: #666; }
+  .icon-btn.fav-active { color: #ff9500; }
+  .icon-btn.edit { color: #bbb; }
+  .icon-btn.edit:hover { color: #6c47ff; }
+  .icon-btn.del { color: #bbb; }
+  .icon-btn.del:hover { color: #ff3b30; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 20px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #6c47ff; }
+  .form-group textarea { resize: vertical; min-height: 100px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+  .cat-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .cat-chip { display: inline-flex; align-items: center; gap: 4px; background: #f0eeff; color: #6c47ff; border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 500; }
+  .cat-chip .del-cat { background: none; border: none; cursor: pointer; color: #6c47ff; font-size: 14px; padding: 0 0 0 2px; line-height: 1; }
+  .cat-chip .del-cat:hover { color: #ff3b30; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1d1d1f; color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 13px; z-index: 9999; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+
+  .long-press-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 3px; background: #6c47ff; transform: scaleX(0); transform-origin: left; transition: transform linear; z-index: 9998; }
+
+  .empty { text-align: center; color: #aaa; padding: 40px 0; font-size: 13px; }
+
+  .backup-status { font-size: 11px; color: #999; margin-left: 8px; }
+
+  @media (max-width: 500px) {
+    .header { padding: 8px 12px; flex-wrap: wrap; }
+    .header-actions { margin-left: 0; width: 100%; justify-content: flex-end; }
+    .main { padding: 10px 12px; }
+    .tabs-bar-wrapper { padding: 0; }
+    .tabs-bar { padding: 0 12px; }
+    .column-selector { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📚 提示词库</h1>
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="搜索提示词..." oninput="onSearchInput()">
+    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="清除搜索">✕</button>
+  </div>
+  <div class="column-selector">
+    <label for="colSelect">列</label>
+    <select id="colSelect" onchange="onColumnChange()">
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+    </select>
+  </div>
+  <div class="header-actions">
+    <span class="backup-status" id="backupStatus">💾 已保存</span>
+    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 导入</button>
+    <input type="file" id="importFile" accept=".xlsx,.xls,.csv,.html" style="display:none" onchange="importFile(event)">
+    <button class="btn btn-secondary" onclick="exportExcel()">📤 导出</button>
+    <button class="btn btn-warning" onclick="manualBackup()">💾 备份</button>
+    <button class="btn btn-primary" onclick="openAddModal()">＋ 添加</button>
+  </div>
+</div>
+
+<div class="tabs-bar-wrapper">
+  <div class="tabs-bar" id="tabsBar"></div>
+</div>
+
+<div class="main" id="mainContent"></div>
+
+<div class="modal-overlay" id="promptModal">
+  <div class="modal">
+    <h2 id="modalTitle">添加提示词</h2>
+    <div class="form-group">
+      <label>名称 *</label>
+      <input type="text" id="fName" placeholder="提示词名称">
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <input type="text" id="fDesc" placeholder="简短描述">
+    </div>
+    <div class="form-group">
+      <label>分类 *</label>
+      <select id="fCategory"></select>
+    </div>
+    <div class="form-group">
+      <label>提示词内容 *</label>
+      <textarea id="fContent" placeholder="输入完整的提示词内容..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('promptModal')">取消</button>
+      <button class="btn btn-primary" onclick="savePrompt()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="catModal">
+  <div class="modal">
+    <h2>管理分类</h2>
+    <div id="catList" class="cat-list"></div>
+    <div class="form-group" style="display:flex;gap:8px;margin-bottom:0">
+      <input type="text" id="newCatInput" placeholder="输入新分类名称" style="flex:1" onkeydown="if(event.key==='Enter')addCategory()">
+      <button class="btn btn-primary" onclick="addCategory()">添加</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('catModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="long-press-bar" id="longPressBar"></div>
+
+<script>
+// ============ DATA ============
+const STORAGE_KEY = 'prompt_manager_data';
+const SETTINGS_KEY = 'prompt_manager_settings';
+
+let categories = ['All', '⭐ 收藏', 'SEO', 'Writing', 'Coding', 'Marketing', 'AI Painting', 'Chatbot', 'Productivity', 'Career'];
+let activeTab = 'All';
+let editingId = null;
+let dragSrcEl = null;
+let dragSrcGroup = null;
+let longPressTimer = null;
+let longPressTarget = null;
+
+let tabLongPressTimer = null;
+let tabDragSrcEl = null;
+let tabIsDragging = false;
+
+let prompts = [];
+let nextId = 1;
+let columnCount = 5;
+
+// ============ 设置持久化 ============
+function loadSettings() {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      if (data.columnCount && [4,5,6,7].includes(data.columnCount)) columnCount = data.columnCount;
+    } catch(e) {}
+  }
+}
+function saveSettings() {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ columnCount }));
+}
+
+// ============ localStorage 持久化 ============
+// ★ 修复点 1：优先读取 HTML 中内嵌的备份数据
+function loadFromStorage() {
+  // 优先检查是否有内嵌备份数据（从备份 HTML 打开的情况）
+  const embedded = document.getElementById('__EMBEDDED_BACKUP_DATA__');
+  if (embedded) {
+    try {
+      const data = JSON.parse(embedded.textContent);
+      prompts = data.prompts || [];
+      categories = data.categories || ['All', '⭐ 收藏'];
+      nextId = data.nextId || 1;
+      // 写入 localStorage，使后续编辑生效
+      saveToStorage();
+      // 移除内嵌数据节点（避免下次再次覆盖用户后续编辑）
+      embedded.remove();
+      console.log('✅ 已从内嵌备份恢复数据');
+      return true;
+    } catch(e) {
+      console.warn('内嵌备份数据解析失败', e);
+    }
+  }
+
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      prompts = data.prompts || [];
+      categories = data.categories || ['All', '⭐ 收藏', 'SEO', 'Writing', 'Coding', 'Marketing', 'AI Painting', 'Chatbot', 'Productivity', 'Career'];
+      nextId = data.nextId || 1;
+      return true;
+    } catch(e) {
+      console.warn('读取存储数据失败，使用默认数据', e);
+    }
+  }
+  return false;
+}
+
+function saveToStorage() {
+  const data = { prompts, categories, nextId };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  updateBackupStatus();
+}
+
+// ============ 默认数据 ============
+function initDefaultData() {
+  prompts = [
+    { id: 1, name: 'SEO Keyword Generator', desc: 'Generate all the keywords you need to get the best SEO results.', category: 'SEO', content: 'You are an SEO expert. Generate a comprehensive list of SEO keywords for the topic: [TOPIC]. Include short-tail, long-tail, and LSI keywords. Group them by search intent (informational, navigational, transactional).', fav: false, order: 0 },
+    { id: 2, name: 'SEO - Title and Meta Descriptions', desc: 'Optimize title tags and meta descriptions for better Google ranking.', category: 'SEO', content: 'Write an SEO-optimized title tag (under 60 chars) and meta description (under 160 chars) for a page about: [TOPIC]. Include the primary keyword naturally. Make it compelling to improve CTR.', fav: true, order: 1 },
+    { id: 3, name: 'Blog Post', desc: 'Help you create a captivating blog article!', category: 'Writing', content: 'Write a comprehensive, engaging blog post about [TOPIC]. Include: 1) A compelling headline, 2) Introduction with hook, 3) 5-7 main sections with subheadings, 4) Practical tips, 5) Conclusion with CTA. Target audience: [AUDIENCE]. Tone: [TONE].', fav: false, order: 2 },
+    { id: 4, name: 'Blog Generator', desc: 'SEO Friendly Blog Writing by Tuhin Bairagi', category: 'Writing', content: 'Create an SEO-friendly blog post for the keyword "[KEYWORD]". Structure: Title, Introduction, 5 H2 sections each with 2-3 paragraphs, FAQ section, Conclusion. Include the keyword naturally throughout. Word count: 1500-2000 words.', fav: false, order: 3 },
+    { id: 5, name: 'SEO Content Master', desc: 'Enter your topic, AI will help you write the SEO content.', category: 'SEO', content: 'Act as an SEO content specialist. Create fully optimized content for: [TOPIC]. Include: primary keyword density 1-2%, semantic keywords, internal linking suggestions, image alt text recommendations, and a content outline following E-E-A-T guidelines.', fav: false, order: 4 },
+    { id: 6, name: 'Grammar Corrector', desc: 'Improve your spelling and grammar by correcting errors in your writing.', category: 'Writing', content: 'Please correct all grammar, spelling, and punctuation errors in the following text. Also improve sentence structure and clarity where needed. Explain the main corrections made. Text: [TEXT]', fav: true, order: 5 },
+    { id: 7, name: 'Learn Code FAST!', desc: 'Teach you the code with the most understandable knowledge.', category: 'Coding', content: 'Teach me [PROGRAMMING CONCEPT/LANGUAGE] from scratch. Use simple analogies, real-world examples, and progressively complex code snippets. After each concept, give me a small exercise to practice. Start with the absolute basics and build up.', fav: false, order: 6 },
+    { id: 8, name: 'Story Generator', desc: 'Write your own beautiful story.', category: 'Writing', content: 'Write a captivating short story with the following parameters: Genre: [GENRE], Setting: [SETTING], Main character: [CHARACTER], Theme: [THEME], Tone: [TONE]. Include vivid descriptions, meaningful dialogue, and a satisfying arc with beginning, conflict, and resolution.', fav: false, order: 7 },
+    { id: 9, name: 'Essay Improver', desc: "Improve your content's effectiveness with ease.", category: 'Writing', content: 'Improve the following essay by: 1) Strengthening the thesis, 2) Improving paragraph transitions, 3) Enhancing vocabulary and style, 4) Fixing any logical gaps, 5) Making the conclusion more impactful. Preserve the original voice and intent. Essay: [ESSAY]', fav: false, order: 8 },
+    { id: 10, name: 'Pro Tips Generator', desc: 'Get perfect tips and advice tailored to your field with this prompt!', category: 'Productivity', content: 'Generate 10 professional, actionable tips for [FIELD/TOPIC]. Each tip should be: specific and practical, backed by best practices, immediately implementable, and include a brief explanation of why it works. Format as a numbered list with bold tip titles.', fav: false, order: 9 },
+    { id: 11, name: 'Logo 设计师', desc: 'Logo 的设计方案和 Midjourney 提示词生成', category: 'AI Painting', content: '你是一位专业的品牌设计师。为以下品牌设计一个Logo方案：品牌名称：[品牌名]，行业：[行业]，目标受众：[受众]，风格偏好：[风格]。请提供：1）设计理念，2）配色方案，3）字体建议，4）Midjourney生成提示词。', fav: false, order: 10 },
+    { id: 12, name: 'LinkedIn 内容生成', desc: '生成专业的 LinkedIn 帖子内容', category: 'Marketing', content: '为我写一篇高互动率的LinkedIn帖子，主题：[主题]。要求：1）开头3行要有钩子，2）分享个人见解或故事，3）提供3-5个实用要点，4）结尾有互动问题，5）加上5个相关hashtag。语气：专业但亲切。字数：200-300字。', fav: true, order: 11 },
+    { id: 13, name: 'Code Reviewer', desc: 'Review your code for bugs, performance, and best practices.', category: 'Coding', content: 'Review the following code and provide feedback on: 1) Bugs or potential errors, 2) Performance optimizations, 3) Security vulnerabilities, 4) Code readability and maintainability, 5) Best practices and design patterns. Provide specific suggestions with code examples. Code: [CODE]', fav: false, order: 12 },
+    { id: 14, name: 'SaaS 文章翻译', desc: '专业的 SaaS 文章翻译（多语言）', category: 'Marketing', content: '你是一位专业的SaaS行业翻译专家。请将以下内容翻译成[目标语言]，要求：1）保持专业术语准确，2）符合目标语言的表达习惯，3）保留原文的营销语气，4）本地化处理文化差异。原文：[原文内容]', fav: false, order: 13 },
+  ];
+  nextId = 15;
+}
+
+loadSettings();
+if (!loadFromStorage()) {
+  initDefaultData();
+  saveToStorage();
+}
+
+// ============ 列数控制 ============
+function applyColumnCount() {
+  const lists = document.querySelectorAll('.prompt-list');
+  lists.forEach(list => { list.style.gridTemplateColumns = `repeat(${columnCount}, 1fr)`; });
+  const sel = document.getElementById('colSelect');
+  if (sel) sel.value = String(columnCount);
+}
+function onColumnChange() {
+  columnCount = parseInt(document.getElementById('colSelect').value);
+  saveSettings();
+  applyColumnCount();
+}
+
+// ============ 备份系统 ============
+function updateBackupStatus() {
+  const el = document.getElementById('backupStatus');
+  const now = new Date();
+  el.textContent = `💾 已保存 (${now.toLocaleTimeString()})`;
+}
+
+function getTimestamp() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+// ★ 修复点 2：HTML 备份时把当前数据 JSON 注入文件
+function exportHtmlBlob() {
+  saveToStorage();
+
+  const snapshot = {
+    prompts: prompts,
+    categories: categories,
+    nextId: nextId,
+    exportTime: new Date().toISOString()
+  };
+  const snapshotJson = JSON.stringify(snapshot).replace(/</g, '\\u003c');
+
+  let htmlContent = document.documentElement.outerHTML;
+
+  // 先移除可能存在的旧注入（避免备份套娃）
+  htmlContent = htmlContent.replace(
+    /<script id="__EMBEDDED_BACKUP_DATA__"[\s\S]*?<\/script>/g,
+    ''
+  );
+
+  // 在 </head> 之前注入数据 script
+  const injected = `<script id="__EMBEDDED_BACKUP_DATA__" type="application/json">${snapshotJson}<\/script>`;
+  htmlContent = htmlContent.replace('</head>', injected + '</head>');
+
+  return new Blob(['<!DOCTYPE html>\n' + htmlContent], { type: 'text/html;charset=utf-8' });
+}
+
+function manualBackup() {
+  const ts = getTimestamp();
+  const count = prompts.length;
+  const htmlBlob = exportHtmlBlob();
+  const htmlUrl = URL.createObjectURL(htmlBlob);
+  const htmlLink = document.createElement('a');
+  htmlLink.href = htmlUrl;
+  htmlLink.download = `提示词库_备份_${ts}_${count}条.html`;
+  document.body.appendChild(htmlLink);
+  htmlLink.click();
+  document.body.removeChild(htmlLink);
+  URL.revokeObjectURL(htmlUrl);
+  showToast(`💾 已备份 HTML (${count}条)`);
+}
+
+function onDataChanged() { saveToStorage(); }
+
+window.addEventListener('beforeunload', function() { saveToStorage(); });
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') saveToStorage();
+});
+
+// ============ 搜索框 ============
+function onSearchInput() {
+  const input = document.getElementById('searchInput');
+  document.getElementById('searchClear').classList.toggle('visible', input.value.length > 0);
+  renderAll();
+}
+function clearSearch() {
+  const input = document.getElementById('searchInput');
+  input.value = '';
+  document.getElementById('searchClear').classList.remove('visible');
+  renderAll();
+  input.focus();
+}
+
+// ============ RENDER ============
+function renderTabs() {
+  const bar = document.getElementById('tabsBar');
+  bar.innerHTML = categories.map(c => `
+    <button class="tab ${activeTab === c ? 'active' : ''}" data-category="${escHtml(c)}">${escHtml(c)}</button>
+  `).join('') + `<button class="tab tab-add" onclick="openCatModal()" title="管理分类">⚙</button>`;
+
+  bar.querySelectorAll('.tab:not(.tab-add)').forEach(tab => {
+    tab.addEventListener('click', function() {
+      if (tabIsDragging) return;
+      setTab(this.dataset.category);
+    });
+  });
+
+  bindTabDrag();
+}
+
+function bindTabDrag() {
+  const bar = document.getElementById('tabsBar');
+  const tabs = bar.querySelectorAll('.tab:not(.tab-add)');
+  tabs.forEach(tab => {
+    tab.addEventListener('mousedown', onTabLongPressStart);
+    tab.addEventListener('touchstart', onTabLongPressStart, { passive: true });
+    tab.addEventListener('mouseup', onTabLongPressEnd);
+    tab.addEventListener('mouseleave', onTabLongPressEnd);
+    tab.addEventListener('touchend', onTabLongPressEnd);
+    tab.addEventListener('touchcancel', onTabLongPressEnd);
+    tab.addEventListener('dragstart', onTabDragStart);
+    tab.addEventListener('dragover', onTabDragOver);
+    tab.addEventListener('drop', onTabDrop);
+    tab.addEventListener('dragend', onTabDragEnd);
+  });
+}
+
+function onTabLongPressStart(e) {
+  if (e.target.closest('.tab-add')) return;
+  const tab = e.currentTarget;
+  if (tabLongPressTimer) clearTimeout(tabLongPressTimer);
+  tabLongPressTimer = setTimeout(() => {
+    tab.setAttribute('draggable', 'true');
+    tab.classList.add('tab-long-press-ready');
+    showToast('🤚 可以拖拽排序分组了');
+    tabLongPressTimer = null;
+  }, 1000);
+}
+function onTabLongPressEnd() {
+  if (tabLongPressTimer) { clearTimeout(tabLongPressTimer); tabLongPressTimer = null; }
+}
+function onTabDragStart(e) {
+  const tab = e.currentTarget;
+  if (tab.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
+  tabDragSrcEl = tab;
+  tabIsDragging = true;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', tab.dataset.category);
+  setTimeout(() => tab.classList.add('tab-dragging'), 0);
+}
+function onTabDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const tab = e.currentTarget;
+  if (tab !== tabDragSrcEl) tab.classList.add('tab-drag-over');
+}
+function onTabDrop(e) {
+  e.preventDefault();
+  const targetTab = e.currentTarget;
+  if (!tabDragSrcEl || targetTab === tabDragSrcEl) return;
+  const srcName = tabDragSrcEl.dataset.category;
+  const tgtName = targetTab.dataset.category;
+  const srcIdx = categories.indexOf(srcName);
+  const tgtIdx = categories.indexOf(tgtName);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+  const [moved] = categories.splice(srcIdx, 1);
+  categories.splice(tgtIdx, 0, moved);
+  renderAll();
+  onDataChanged();
+  showToast('✅ 分组顺序已更新');
+}
+function onTabDragEnd() {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.remove('tab-dragging', 'tab-drag-over', 'tab-long-press-ready');
+    t.setAttribute('draggable', 'false');
+  });
+  tabDragSrcEl = null;
+  tabIsDragging = false;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const tabsBar = document.getElementById('tabsBar');
+  if (tabsBar) {
+    tabsBar.addEventListener('wheel', function(e) {
+      if (this.scrollWidth > this.clientWidth) {
+        this.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
+});
+
+function setTab(c) { activeTab = c; renderAll(); }
+
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  return prompts.filter(p => {
+    const matchSearch = !q || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.content.toLowerCase().includes(q);
+    const matchTab = activeTab === 'All' || activeTab === '⭐ 收藏' ? true : p.category === activeTab;
+    return matchSearch && matchTab;
+  });
+}
+
+function renderAll() {
+  renderTabs();
+  const container = document.getElementById('mainContent');
+  const filtered = getFiltered();
+
+  if (activeTab === '⭐ 收藏') {
+    const favs = filtered.filter(p => p.fav).sort((a,b) => a.order - b.order);
+    if (favs.length === 0) {
+      container.innerHTML = '<div class="empty">暂无收藏的提示词 ⭐</div>';
+      return;
+    }
+    container.innerHTML = renderSection('⭐ 收藏', favs, true);
+    afterRender();
+    return;
+  }
+
+  const favs = filtered.filter(p => p.fav).sort((a,b) => a.order - b.order);
+  const nonFavs = filtered.filter(p => !p.fav).sort((a,b) => a.order - b.order);
+
+  let html = '';
+  if (favs.length > 0) html += renderSection('⭐ 收藏', favs, true);
+  if (nonFavs.length > 0) {
+    const title = activeTab === 'All' ? '全部提示词' : activeTab;
+    html += renderSection(title, nonFavs, false);
+  }
+  if (!html) html = '<div class="empty">没有找到匹配的提示词 🔍</div>';
+  container.innerHTML = html;
+  afterRender();
+}
+
+function afterRender() {
+  applyColumnCount();
+  bindDrag();
+  bindSectionTitleEdit();
+}
+
+function bindSectionTitleEdit() {
+  document.querySelectorAll('.title-edit-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      startEditingTitle(this.closest('.section-title'));
+    });
+  });
+}
+
+function startEditingTitle(titleEl) {
+  const currentText = titleEl.querySelector('.title-text').textContent;
+  const input = titleEl.querySelector('.title-input');
+  input.value = currentText;
+  titleEl.classList.add('editing');
+  input.focus();
+  input.select();
+}
+
+function finishEditingTitle(titleEl, save) {
+  const input = titleEl.querySelector('.title-input');
+  const textEl = titleEl.querySelector('.title-text');
+  const oldName = textEl.textContent;
+
+  if (save) {
+    const newName = input.value.trim();
+    if (newName && newName !== oldName) {
+      if (oldName === '⭐ 收藏') {
+        showToast('⚠️ 收藏分组不可重命名');
+      } else {
+        const catIndex = categories.indexOf(oldName);
+        if (catIndex !== -1) {
+          categories[catIndex] = newName;
+          prompts.forEach(p => { if (p.category === oldName) p.category = newName; });
+          if (activeTab === oldName) activeTab = newName;
+          showToast(`✅ 已重命名为 "${newName}"`);
+          renderAll();
+          onDataChanged();
+          return;
+        }
+      }
+    }
+  }
+  titleEl.classList.remove('editing');
+}
+
+function renderSection(title, items, isFav) {
+  const cls = isFav ? 'section-fav' : '';
+  const groupKey = isFav ? 'fav' : 'main';
+  return `
+    <div class="section ${cls}">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="title-text">${escHtml(title)}</span>
+          <input class="title-input" type="text" maxlength="30"
+            onblur="finishEditingTitle(this.closest('.section-title'), true)"
+            onkeydown="if(event.key==='Enter'){this.blur()}else if(event.key==='Escape'){finishEditingTitle(this.closest('.section-title'),false)}">
+          <button class="title-edit-btn" title="重命名分组">✏️</button>
+          <span class="section-count">${items.length}</span>
+        </div>
+      </div>
+      <div class="prompt-list" data-group="${groupKey}">
+        ${items.map(p => renderCard(p)).join('')}
+      </div>
+    </div>`;
+}
+
+function renderCard(p) {
+  const favClass = p.fav ? 'fav-active' : '';
+  return `
+    <div class="prompt-card" data-id="${p.id}" draggable="false">
+      <span class="drag-handle" title="长按1秒可拖拽排序">⠿</span>
+      <div class="card-body">
+        <div class="card-name" title="${escHtml(p.name)}">${escHtml(p.name)}</div>
+        ${p.desc ? `<div class="card-desc">${escHtml(p.desc)}</div>` : ''}
+        <span class="card-tag">${escHtml(p.category)}</span>
+      </div>
+      <div class="card-actions">
+        <button class="copy-btn" onclick="copyPrompt(${p.id}, this)" title="一键复制">📋 复制</button>
+        <div class="action-icon-row">
+          <button class="icon-btn ${favClass}" onclick="toggleFav(${p.id})" title="${p.fav ? '取消收藏' : '收藏'}">⭐</button>
+          <button class="icon-btn edit" onclick="openEditModal(${p.id})" title="编辑">✏️</button>
+          <button class="icon-btn del" onclick="deletePrompt(${p.id})" title="删除">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============ COPY ============
+function copyPrompt(id, btn) {
+  const p = prompts.find(x => x.id === id);
+  if (!p) return;
+  navigator.clipboard.writeText(p.content).then(() => {
+    btn.innerHTML = '✅ 已复制';
+    btn.classList.add('copied');
+    showToast('✅ 已复制到剪贴板');
+    setTimeout(() => { btn.innerHTML = '📋 复制'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = p.content; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    btn.innerHTML = '✅ 已复制'; btn.classList.add('copied');
+    showToast('✅ 已复制到剪贴板');
+    setTimeout(() => { btn.innerHTML = '📋 复制'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ============ FAV ============
+function toggleFav(id) {
+  const p = prompts.find(x => x.id === id);
+  if (p) { p.fav = !p.fav; renderAll(); onDataChanged(); showToast(p.fav ? '⭐ 已加入收藏' : '取消收藏'); }
+}
+
+// ============ DRAG ============
+function bindDrag() {
+  document.querySelectorAll('.prompt-card').forEach(card => {
+    card.addEventListener('mousedown', onLongPressStart);
+    card.addEventListener('touchstart', onLongPressStart, {passive: true});
+    card.addEventListener('mouseup', onLongPressEnd);
+    card.addEventListener('mouseleave', onLongPressEnd);
+    card.addEventListener('touchend', onLongPressEnd);
+    card.addEventListener('touchcancel', onLongPressEnd);
+    card.addEventListener('dragstart', onDragStart);
+    card.addEventListener('dragover', onDragOver);
+    card.addEventListener('drop', onDrop);
+    card.addEventListener('dragend', onDragEnd);
+  });
+}
+
+function onLongPressStart(e) {
+  if (e.target.closest('button')) return;
+  const card = e.currentTarget;
+  longPressTarget = card;
+  const bar = document.getElementById('longPressBar');
+  bar.style.transition = 'none';
+  bar.style.transform = 'scaleX(0)';
+  setTimeout(() => {
+    bar.style.transition = 'transform 1s linear';
+    bar.style.transform = 'scaleX(1)';
+  }, 10);
+  longPressTimer = setTimeout(() => {
+    card.setAttribute('draggable', 'true');
+    card.classList.add('long-press-ready');
+    showToast('🤚 可以拖拽排序了');
+    bar.style.transition = 'none';
+    bar.style.transform = 'scaleX(0)';
+    longPressTimer = null;
+  }, 1000);
+}
+
+function onLongPressEnd() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    const bar = document.getElementById('longPressBar');
+    bar.style.transition = 'transform 0.2s';
+    bar.style.transform = 'scaleX(0)';
+  }
+}
+
+function onDragStart(e) {
+  if (e.currentTarget.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
+  dragSrcEl = e.currentTarget;
+  dragSrcGroup = dragSrcEl.closest('.prompt-list').dataset.group;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragSrcEl.dataset.id);
+  setTimeout(() => dragSrcEl.classList.add('dragging'), 0);
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const card = e.currentTarget;
+  if (card !== dragSrcEl) card.classList.add('drag-over');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const targetCard = e.currentTarget;
+  if (!dragSrcEl || targetCard === dragSrcEl) return;
+  const srcId = parseInt(dragSrcEl.dataset.id);
+  const tgtId = parseInt(targetCard.dataset.id);
+  const srcIdx = prompts.findIndex(p => p.id === srcId);
+  const tgtIdx = prompts.findIndex(p => p.id === tgtId);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+  const [moved] = prompts.splice(srcIdx, 1);
+  prompts.splice(tgtIdx, 0, moved);
+  prompts.forEach((p, i) => p.order = i);
+  renderAll();
+  onDataChanged();
+  showToast('✅ 排序已更新');
+}
+
+function onDragEnd(e) {
+  document.querySelectorAll('.prompt-card').forEach(c => {
+    c.classList.remove('dragging', 'drag-over', 'long-press-ready');
+    c.setAttribute('draggable', 'false');
+  });
+  dragSrcEl = null;
+}
+
+// ============ ADD / EDIT ============
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '添加提示词';
+  document.getElementById('fName').value = '';
+  document.getElementById('fDesc').value = '';
+  document.getElementById('fContent').value = '';
+  populateCategorySelect();
+  document.getElementById('promptModal').classList.add('show');
+}
+
+function openEditModal(id) {
+  const p = prompts.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = '编辑提示词';
+  document.getElementById('fName').value = p.name;
+  document.getElementById('fDesc').value = p.desc;
+  document.getElementById('fContent').value = p.content;
+  populateCategorySelect(p.category);
+  document.getElementById('promptModal').classList.add('show');
+}
+
+function populateCategorySelect(selected) {
+  const sel = document.getElementById('fCategory');
+  const cats = categories.filter(c => c !== 'All' && c !== '⭐ 收藏');
+  sel.innerHTML = cats.map(c => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('');
+}
+
+function savePrompt() {
+  const name = document.getElementById('fName').value.trim();
+  const desc = document.getElementById('fDesc').value.trim();
+  const category = document.getElementById('fCategory').value;
+  const content = document.getElementById('fContent').value.trim();
+  if (!name || !content) { showToast('⚠️ 名称和内容不能为空'); return; }
+  if (editingId) {
+    const p = prompts.find(x => x.id === editingId);
+    if (p) { p.name = name; p.desc = desc; p.category = category; p.content = content; }
+    showToast('✅ 已更新');
+  } else {
+    prompts.push({ id: nextId++, name, desc, category, content, fav: false, order: prompts.length });
+    showToast('✅ 已添加');
+  }
+  closeModal('promptModal');
+  renderAll();
+  onDataChanged();
+}
+
+function deletePrompt(id) {
+  if (!confirm('确定要删除这条提示词吗？')) return;
+  prompts = prompts.filter(p => p.id !== id);
+  renderAll();
+  onDataChanged();
+  showToast('🗑️ 已删除');
+}
+
+// ============ CATEGORY ============
+function openCatModal() {
+  renderCatList();
+  document.getElementById('catModal').classList.add('show');
+}
+
+function renderCatList() {
+  const fixed = ['All', '⭐ 收藏'];
+  const editable = categories.filter(c => !fixed.includes(c));
+  document.getElementById('catList').innerHTML = editable.map(c => `
+    <div class="cat-chip">${escHtml(c)}<button class="del-cat" onclick="deleteCategory('${escHtml(c)}')" title="删除">×</button></div>
+  `).join('');
+}
+
+function addCategory() {
+  const input = document.getElementById('newCatInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (categories.includes(name)) { showToast('⚠️ 分类已存在'); return; }
+  categories.push(name);
+  input.value = '';
+  renderCatList();
+  renderAll();
+  saveToStorage();
+  showToast('✅ 分类已添加');
+}
+
+function deleteCategory(name) {
+  const used = prompts.some(p => p.category === name);
+  if (used && !confirm(`分类"${name}"下还有提示词，删除后这些提示词将归类为"其他"，确定删除？`)) return;
+  prompts.forEach(p => { if (p.category === name) p.category = '其他'; });
+  if (!categories.includes('其他') && used) categories.push('其他');
+  categories = categories.filter(c => c !== name);
+  if (activeTab === name) activeTab = 'All';
+  renderCatList();
+  renderAll();
+  saveToStorage();
+  showToast('🗑️ 分类已删除');
+}
+
+// ============ EXPORT ============
+// ★ 修复点 3：Excel 导出 —— 增加 categories Sheet + order 列
+function exportExcel() {
+  const count = prompts.length;
+
+  // Sheet 1: 提示词（增加 order 列）
+  const data = [['ID','名称','描述','分类','内容','是否收藏','排序']];
+  prompts.forEach((p, i) => {
+    data.push([p.id, p.name, p.desc, p.category, p.content, p.fav ? '是' : '否', p.order ?? i]);
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet(data);
+  ws1['!cols'] = [{wch:6},{wch:30},{wch:40},{wch:15},{wch:80},{wch:8},{wch:8}];
+
+  // Sheet 2: 分组顺序（完整保留所有分类，包括空分组）
+  const catData = [['分组顺序', '说明']];
+  categories.forEach((c, i) => {
+    let note = '用户分组';
+    if (c === 'All') note = '系统保留:全部';
+    else if (c === '⭐ 收藏') note = '系统保留:收藏';
+    catData.push([c, note]);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(catData);
+  ws2['!cols'] = [{wch:25},{wch:20}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws1, '提示词');
+  XLSX.utils.book_append_sheet(wb, ws2, '分组顺序');
+  XLSX.writeFile(wb, `提示词库_${count}条.xlsx`);
+  showToast(`📤 已导出 (${count}条 + ${categories.length}个分组)`);
+}
+
+// ============ IMPORT ============
+// ★ 修复点 4：Excel 导入 —— 读取分组顺序 Sheet + order 列
+function importFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (ext === 'html') {
+    showToast('📥 请直接双击 HTML 备份文件打开，数据会自动恢复');
+    event.target.value = '';
+    return;
+  }
+
+  if (prompts.length > 0) {
+    if (!confirm(`当前有 ${prompts.length} 条提示词，导入后将全部替换为文件中的数据，确定继续？`)) {
+      event.target.value = '';
+      return;
+    }
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type: 'binary'});
+
+      // 读取主表
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+      if (rows.length < 2) { showToast('⚠️ 文件内容为空'); return; }
+
+      const header = rows[0].map(h => String(h||'').toLowerCase());
+      const nameIdx = header.findIndex(h => h.includes('名称') || h.includes('name'));
+      const descIdx = header.findIndex(h => h.includes('描述') || h.includes('desc'));
+      const catIdx = header.findIndex(h => h.includes('分类') || h.includes('cat'));
+      const contentIdx = header.findIndex(h => h.includes('内容') || h.includes('content'));
+      const favIdx = header.findIndex(h => h.includes('收藏') || h.includes('fav'));
+      const orderIdx = header.findIndex(h => h.includes('排序') || h.includes('order'));
+      if (nameIdx === -1 || contentIdx === -1) { showToast('⚠️ 找不到名称或内容列，请检查表头'); return; }
+
+      // 读取「分组顺序」Sheet（如果存在）
+      let importedCategories = null;
+      const catSheetName = wb.SheetNames.find(n => n.includes('分组') || n.toLowerCase().includes('categ'));
+      if (catSheetName) {
+        const catWs = wb.Sheets[catSheetName];
+        const catRows = XLSX.utils.sheet_to_json(catWs, {header:1});
+        importedCategories = catRows.slice(1)
+          .map(r => String(r[0]||'').trim())
+          .filter(c => c.length > 0);
+      }
+
+      prompts = [];
+      nextId = 1;
+
+      // 优先使用导入的分组顺序
+      if (importedCategories && importedCategories.length > 0) {
+        categories = importedCategories.slice();
+        // 确保系统保留分组存在
+        if (!categories.includes('All')) categories.unshift('All');
+        if (!categories.includes('⭐ 收藏')) {
+          const allIdx = categories.indexOf('All');
+          categories.splice(allIdx + 1, 0, '⭐ 收藏');
+        }
+      } else {
+        categories = ['All', '⭐ 收藏'];
+      }
+
+      let added = 0;
+      const dataRows = rows.slice(1);
+      dataRows.forEach((row, idx) => {
+        const name = String(row[nameIdx]||'').trim();
+        const content = String(row[contentIdx]||'').trim();
+        if (!name || !content) return;
+        const desc = descIdx >= 0 ? String(row[descIdx]||'') : '';
+        let cat = catIdx >= 0 ? String(row[catIdx]||'').trim() : 'Other';
+        if (!cat) cat = 'Other';
+        if (!categories.includes(cat)) categories.push(cat);
+        const fav = favIdx >= 0 ? (String(row[favIdx]||'').includes('是') || String(row[favIdx]||'').toLowerCase() === 'true') : false;
+        const order = orderIdx >= 0 ? (parseInt(row[orderIdx]) || idx) : idx;
+        prompts.push({ id: nextId++, name, desc, category: cat, content, fav, order });
+        added++;
+      });
+
+      // 按 order 排序，保证显示顺序正确
+      prompts.sort((a,b) => a.order - b.order);
+
+      renderAll();
+      onDataChanged();
+      showToast(`✅ 导入 ${added} 条 + ${categories.length} 个分组`);
+    } catch(err) {
+      showToast('❌ 导入失败：' + err.message);
+    }
+    event.target.value = '';
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ============ MODAL ============
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('show'); });
+});
+
+// ============ TOAST ============
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ============ INIT ============
+renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astro + Front Matter CMS 全栈知识体系</title>
+  <style>
+    :root {
+      --primary: #7c3aed;
+      --primary-light: #a78bfa;
+      --secondary: #0ea5e9;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --astro: #ff5d01;
+      --github: #e2e8f0;
+      --cf: #f59e0b;
+      --fm: #06b6d4;
+      --dark: #0a0f1e;
+      --card: #111827;
+      --card2: #1a2235;
+      --border: #1f2d45;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --code: #0d1117;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--dark); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; line-height:1.75; font-size:15px; }
+
+    /* ── NAV ── */
+    nav {
+      position:fixed; top:0; left:0; right:0; z-index:200;
+      background:rgba(10,15,30,0.96); backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:4px;
+      padding:0 20px; height:52px; overflow-x:auto;
+    }
+    nav::-webkit-scrollbar { height:0; }
+    .nav-brand { font-weight:800; font-size:14px; color:var(--primary-light); margin-right:12px; white-space:nowrap; flex-shrink:0; }
+    nav a { color:var(--muted); text-decoration:none; padding:5px 11px; border-radius:6px; font-size:12.5px; white-space:nowrap; transition:.2s; }
+    nav a:hover { background:rgba(124,58,237,.25); color:var(--primary-light); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      text-align:center; padding:80px 24px 60px;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,.3) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 80%, rgba(14,165,233,.15) 0%, transparent 60%);
+      position:relative; overflow:hidden;
+    }
+    .hero::before {
+      content:''; position:absolute; inset:0; opacity:.04;
+      background-image: repeating-linear-gradient(0deg,transparent,transparent 39px,#7c3aed 39px,#7c3aed 40px),
+        repeating-linear-gradient(90deg,transparent,transparent 39px,#7c3aed 39px,#7c3aed 40px);
+    }
+    .hero-badge {
+      background:rgba(124,58,237,.18); border:1px solid rgba(124,58,237,.4);
+      color:var(--primary-light); padding:5px 18px; border-radius:20px;
+      font-size:12px; font-weight:600; letter-spacing:.5px; margin-bottom:22px;
+      display:inline-block; position:relative;
+    }
+    .hero h1 {
+      font-size:clamp(2rem,5.5vw,3.8rem); font-weight:900; line-height:1.15;
+      background:linear-gradient(135deg,#fff 0%,var(--primary-light) 45%,var(--fm) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      margin-bottom:18px; position:relative;
+    }
+    .hero-sub { font-size:1.05rem; color:var(--muted); max-width:620px; margin:0 auto 36px; position:relative; }
+    .tech-pills { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:44px; position:relative; }
+    .pill {
+      display:flex; align-items:center; gap:7px;
+      padding:8px 18px; border-radius:24px; font-size:13px; font-weight:600;
+      border:1px solid; backdrop-filter:blur(8px);
+    }
+    .p-vsc  { background:rgba(0,122,204,.12);  border-color:rgba(0,122,204,.4);  color:#60a5fa; }
+    .p-ast  { background:rgba(255,93,1,.12);   border-color:rgba(255,93,1,.4);   color:#fb923c; }
+    .p-fm   { background:rgba(6,182,212,.12);  border-color:rgba(6,182,212,.4);  color:#22d3ee; }
+    .p-gh   { background:rgba(226,232,240,.08);border-color:rgba(226,232,240,.2);color:#e2e8f0; }
+    .p-cf   { background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.4); color:#fbbf24; }
+
+    /* pipeline */
+    .pipeline {
+      display:flex; align-items:center; gap:0; flex-wrap:wrap;
+      justify-content:center; position:relative;
+    }
+    .pipe-item {
+      background:var(--card); border:1px solid var(--border);
+      padding:10px 18px; border-radius:10px; font-size:13px; font-weight:600;
+      display:flex; align-items:center; gap:7px;
+    }
+    .pipe-arrow { color:var(--primary-light); font-size:20px; padding:0 10px; }
+
+    /* ── WRAPPER ── */
+    .page-wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+
+    /* ── SECTION ── */
+    .sec { padding:80px 0; }
+    .sec-head { text-align:center; margin-bottom:52px; }
+    .sec-tag {
+      display:inline-block; background:rgba(124,58,237,.15);
+      border:1px solid rgba(124,58,237,.35); color:var(--primary-light);
+      padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700;
+      letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px;
+    }
+    .sec-head h2 { font-size:clamp(1.6rem,3vw,2.3rem); font-weight:800; margin-bottom:12px; }
+    .sec-head p { color:var(--muted); max-width:580px; margin:0 auto; }
+
+    /* ── GRID ── */
+    .g2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
+    .g3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
+
+    /* ── CARD ── */
+    .card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:16px; padding:26px;
+      transition:transform .25s,border-color .25s,box-shadow .25s;
+      position:relative; overflow:hidden;
+    }
+    .card:hover { transform:translateY(-5px); border-color:var(--primary); box-shadow:0 12px 40px rgba(124,58,237,.2); }
+    .card-top { height:3px; position:absolute; top:0; left:0; right:0; border-radius:16px 16px 0 0; }
+    .card-ico { font-size:2rem; margin-bottom:14px; }
+    .card h3 { font-size:1.05rem; font-weight:700; margin-bottom:8px; }
+    .card p { color:var(--muted); font-size:13.5px; }
+    .analogy {
+      margin-top:14px; padding:12px 14px;
+      background:rgba(124,58,237,.1); border-left:3px solid var(--primary);
+      border-radius:0 8px 8px 0; font-size:13px; color:#c4b5fd;
+    }
+    .analogy b { color:var(--primary-light); }
+
+    /* ── STEPS ── */
+    .steps { display:flex; flex-direction:column; gap:0; }
+    .step { display:flex; gap:20px; padding-bottom:28px; }
+    .step:last-child { padding-bottom:0; }
+    .step-l { display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
+    .step-n {
+      width:42px; height:42px; border-radius:50%;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:#fff; display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:15px; z-index:1; flex-shrink:0;
+    }
+    .step-ln { width:2px; flex:1; background:linear-gradient(to bottom,var(--primary),transparent); margin-top:4px; }
+    .step:last-child .step-ln { display:none; }
+    .step-body {
+      flex:1; background:var(--card2); border:1px solid var(--border);
+      border-radius:12px; padding:18px 22px;
+    }
+    .step-body h3 { font-size:.95rem; font-weight:700; color:var(--primary-light); margin-bottom:6px; }
+    .step-body p { color:var(--muted); font-size:13.5px; }
+
+    /* ── CODE ── */
+    .code-wrap { background:var(--code); border:1px solid #21262d; border-radius:12px; overflow:hidden; margin:12px 0; }
+    .code-bar {
+      background:#161b22; padding:8px 14px;
+      display:flex; align-items:center; gap:7px;
+      border-bottom:1px solid #21262d;
+    }
+    .dot { width:11px; height:11px; border-radius:50%; }
+    .code-label { color:#6e7681; font-size:11.5px; margin-left:auto; font-family:monospace; }
+    .code-wrap pre { padding:18px; overflow-x:auto; font-size:13px; font-family:'Cascadia Code','Fira Code',Consolas,monospace; line-height:1.65; }
+    .cg { color:#7ee787; } .cb { color:#79c0ff; } .cy { color:#e3b341; }
+    .cp { color:#d2a8ff; } .co { color:#ffa657; } .cm { color:#8b949e; }
+    .cr { color:#ff7b72; } .cw { color:#e6edf3; }
+
+    /* ── HIGHLIGHT ── */
+    .hl {
+      border-radius:12px; padding:18px 22px; margin:14px 0;
+      border:1px solid;
+    }
+    .hl-purple { background:rgba(124,58,237,.1); border-color:rgba(124,58,237,.3); }
+    .hl-blue   { background:rgba(14,165,233,.1);  border-color:rgba(14,165,233,.3);  }
+    .hl-green  { background:rgba(16,185,129,.1);  border-color:rgba(16,185,129,.3);  }
+    .hl-amber  { background:rgba(245,158,11,.1);  border-color:rgba(245,158,11,.3);  }
+    .hl-cyan   { background:rgba(6,182,212,.1);   border-color:rgba(6,182,212,.3);   }
+    .hl h4 { font-size:13.5px; font-weight:700; margin-bottom:8px; }
+    .hl ul { padding-left:18px; }
+    .hl li { font-size:13px; color:var(--muted); margin-bottom:4px; }
+
+    /* ── TABLE ── */
+    .tbl-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--border); }
+    table { width:100%; border-collapse:collapse; }
+    th { background:rgba(124,58,237,.18); padding:12px 16px; text-align:left; font-size:13px; font-weight:700; border-bottom:2px solid var(--primary); white-space:nowrap; }
+    td { padding:11px 16px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:top; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:rgba(255,255,255,.025); }
+    .tag { display:inline-block; padding:2px 9px; border-radius:4px; font-size:11px; font-weight:700; }
+    .tg { background:rgba(16,185,129,.2); color:#34d399; }
+    .tr { background:rgba(239,68,68,.2); color:#f87171; }
+    .ty { background:rgba(245,158,11,.2); color:#fbbf24; }
+    .tb { background:rgba(14,165,233,.2); color:#38bdf8; }
+
+    /* ── WORKFLOW DIAGRAM ── */
+    .wf-diagram {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:16px; padding:32px; overflow-x:auto;
+    }
+    .wf-row { display:flex; align-items:center; gap:0; min-width:700px; }
+    .wf-box {
+      display:flex; flex-direction:column; align-items:center;
+      gap:8px; flex-shrink:0;
+    }
+    .wf-inner {
+      width:120px; padding:14px 8px; border-radius:12px;
+      text-align:center; font-size:12px; font-weight:700;
+      border:2px solid; line-height:1.4;
+    }
+    .wf-sub { font-size:11px; color:var(--muted); text-align:center; max-width:120px; }
+    .wf-arr { color:var(--primary-light); font-size:22px; padding:0 8px; flex-shrink:0; margin-top:-18px; }
+
+    /* ── MINDMAP ── */
+    .mm-wrap {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:20px; padding:36px; overflow-x:auto;
+    }
+    .mm-root {
+      display:flex; align-items:stretch; gap:0;
+      min-width:900px;
+    }
+    .mm-center-col { display:flex; align-items:center; flex-shrink:0; }
+    .mm-center-box {
+      background:linear-gradient(135deg,var(--primary),var(--fm));
+      color:#fff; padding:18px 22px; border-radius:14px;
+      font-weight:800; font-size:14px; text-align:center;
+      box-shadow:0 0 40px rgba(124,58,237,.5); white-space:nowrap;
+      line-height:1.5;
+    }
+    .mm-sides { display:flex; flex-direction:column; justify-content:space-around; flex:1; gap:10px; }
+    .mm-branch { display:flex; align-items:center; }
+    .mm-h-line { height:2px; width:50px; flex-shrink:0; }
+    .mm-node {
+      padding:8px 14px; border-radius:8px;
+      font-size:12.5px; font-weight:700; white-space:nowrap; flex-shrink:0;
+      border:1px solid;
+    }
+    .mm-children { display:flex; flex-direction:column; gap:5px; margin-left:0; }
+    .mm-child { display:flex; align-items:center; }
+    .mm-h2 { height:2px; width:28px; flex-shrink:0; background:var(--border); }
+    .mm-leaf {
+      padding:4px 10px; border-radius:6px; font-size:11.5px;
+      background:rgba(255,255,255,.05); border:1px solid var(--border);
+      color:var(--muted); white-space:nowrap;
+    }
+
+    /* ── DIVIDER ── */
+    hr { border:none; border-top:1px solid var(--border); }
+
+    /* ── FOOTER ── */
+    footer { text-align:center; padding:44px 24px; color:var(--muted); font-size:13px; border-top:1px solid var(--border); }
+    footer strong { color:var(--primary-light); }
+
+    /* ── BADGE ── */
+    .badge { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11px; font-weight:700; margin:2px; }
+    .bd-p { background:rgba(124,58,237,.2); color:var(--primary-light); }
+    .bd-c { background:rgba(6,182,212,.2); color:#22d3ee; }
+    .bd-g { background:rgba(16,185,129,.2); color:#34d399; }
+    .bd-a { background:rgba(245,158,11,.2); color:#fbbf24; }
+    .bd-r { background:rgba(255,93,1,.2); color:#fb923c; }
+
+    /* ── ROLE CARD ── */
+    .role-row { display:flex; align-items:stretch; gap:0; margin:28px 0; }
+    .role-icon-col {
+      width:80px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+      background:var(--card2); border:1px solid var(--border);
+      border-radius:12px 0 0 12px; font-size:2rem;
+    }
+    .role-body {
+      flex:1; background:var(--card); border:1px solid var(--border);
+      border-left:none; border-radius:0 12px 12px 0; padding:18px 22px;
+    }
+    .role-body h3 { font-size:1rem; font-weight:700; margin-bottom:6px; }
+    .role-body p { color:var(--muted); font-size:13.5px; }
+
+    @media(max-width:640px){
+      .sec { padding:60px 0; }
+      .page-wrap { padding:0 16px; }
+      .g2,.g3 { grid-template-columns:1fr; }
+      .role-row { flex-direction:column; }
+      .role-icon-col { width:100%; height:60px; border-radius:12px 12px 0 0; }
+      .role-body { border-left:1px solid var(--border); border-top:none; border-radius:0 0 12px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════ NAV ════ -->
+<nav>
+  <span class="nav-brand">🚀 Astro Guide</span>
+  <a href="#hero">首页</a>
+  <a href="#what">是什么</a>
+  <a href="#why">为什么</a>
+  <a href="#howto">怎么做</a>
+  <a href="#workflow">工作流</a>
+  <a href="#tech">技术要素</a>
+  <a href="#compare">对比</a>
+  <a href="#mindmap">思维导图</a>
+</nav>
+
+<!-- ════ HERO ════ -->
+<div class="hero" id="hero">
+  <div class="hero-badge">📚 完整知识体系 · 从零到全球部署</div>
+  <h1>Astro + Front Matter CMS<br>全栈知识体系</h1>
+  <p class="hero-sub">用生活化比喻，彻底搞懂 VS Code → Astro → Front Matter CMS → GitHub → Cloudflare Pages 的完整工作流</p>
+  <div class="tech-pills">
+    <span class="pill p-vsc">💻 VS Code</span>
+    <span class="pill p-ast">🚀 Astro 框架</span>
+    <span class="pill p-fm">📋 Front Matter CMS</span>
+    <span class="pill p-gh">🐙 GitHub</span>
+    <span class="pill p-cf">☁️ Cloudflare Pages</span>
+  </div>
+  <div class="pipeline">
+    <div class="pipe-item">💻 本地开发</div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-item">📋 Front Matter 管理内容</div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-item">🐙 推送 GitHub</div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-item">☁️ 自动构建部署</div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-item">🌍 全球访问</div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ════ §1 是什么 ════ -->
+<div class="page-wrap">
+<section class="sec" id="what">
+  <div class="sec-head">
+    <div class="sec-tag">① 是什么</div>
+    <h2>认识这套技术栈的每一个角色</h2>
+    <p>把每个工具想象成一个具体的职业或生活场景，立刻理解它们的定位</p>
+  </div>
+
+  <!-- 整体比喻 -->
+  <div class="hl hl-purple" style="margin-bottom:32px;">
+    <h4 style="color:var(--primary-light); font-size:1rem;">🏗️ 整体生活类比：开一家"自媒体杂志社"</h4>
+    <p style="font-size:13.5px; color:var(--muted); margin-top:6px;">
+      你是一个独立博主，想把文章发布到全世界。<br>
+      <strong style="color:#e2e8f0;">VS Code</strong> = 你的办公室 &nbsp;|&nbsp;
+      <strong style="color:#fb923c;">Astro</strong> = 排版印刷机 &nbsp;|&nbsp;
+      <strong style="color:#22d3ee;">Front Matter CMS</strong> = 编辑部管理系统 &nbsp;|&nbsp;
+      <strong style="color:#e2e8f0;">GitHub</strong> = 稿件仓库 &nbsp;|&nbsp;
+      <strong style="color:#fbbf24;">Cloudflare Pages</strong> = 全球发行渠道
+    </p>
+  </div>
+
+  <div class="g2">
+    <!-- VS Code -->
+    <div class="card">
+      <div class="card-top" style="background:#007acc;"></div>
+      <div class="card-ico">💻</div>
+      <h3>VS Code — 你的"开发驾驶舱"</h3>
+      <p>微软出品的<strong>代码编辑器</strong>，通过插件生态可以变成完整的 IDE。它是你整个工作流的<strong>起点和操作中心</strong>——写代码、管理文件、运行终端、操作 Git 全在这里完成。</p>
+      <div class="analogy"><b>类比：</b>就像汽车的驾驶舱——方向盘（编辑器）、仪表盘（终端）、导航（Git面板）、收音机（插件）都集成在一起，你只需专注开车（写内容）。</div>
+    </div>
+
+    <!-- Astro -->
+    <div class="card">
+      <div class="card-top" style="background:#ff5d01;"></div>
+      <div class="card-ico">🚀</div>
+      <h3>Astro — 静态网站"排版印刷机"</h3>
+      <p>一个专注于<strong>内容驱动型网站</strong>的现代前端框架。核心理念是 <strong>"Islands Architecture"（孤岛架构）</strong>：默认生成零 JS 的纯 HTML，只在需要交互的地方才加载 JS，速度极快。</p>
+      <p style="margin-top:8px; font-size:13px; color:var(--muted);">支持 .astro / .md / .mdx 文件，可混用 React、Vue、Svelte 组件。</p>
+      <div class="analogy"><b>类比：</b>就像出版社的排版工厂——你给它原材料（Markdown文章），它帮你排版成精美的HTML页面，发给全世界读者。</div>
+    </div>
+
+    <!-- Front Matter CMS -->
+    <div class="card" style="grid-column:1/-1;">
+      <div class="card-top" style="background:linear-gradient(90deg,#06b6d4,#7c3aed);"></div>
+      <div class="card-ico">📋</div>
+      <h3>Front Matter CMS — VS Code 内置的"编辑部管理系统" ⭐ 核心主角</h3>
+      <p>
+        Front Matter CMS 是一个 <strong>VS Code 插件</strong>，它把你的 VS Code 变成一个功能完整的 <strong>内容管理系统（CMS）</strong>。
+        它读取你 Markdown 文件顶部的 <strong>frontmatter（YAML元数据）</strong>，并提供图形化界面来管理所有文章的元数据（标题、日期、标签、封面图、草稿状态等），
+        无需手动编辑 YAML，还提供文章列表、媒体库、SEO 预览等功能。
+      </p>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:16px;">
+        <div style="background:rgba(6,182,212,.1); border:1px solid rgba(6,182,212,.3); border-radius:8px; padding:12px;">
+          <div style="color:#22d3ee; font-weight:700; font-size:13px; margin-bottom:4px;">📝 Frontmatter 是什么？</div>
+          <div style="font-size:12.5px; color:var(--muted);">Markdown 文件顶部用 <code style="color:#79c0ff;">---</code> 包裹的 YAML 数据块，存储文章的元信息（标题、日期、标签等）</div>
+        </div>
+        <div style="background:rgba(124,58,237,.1); border:1px solid rgba(124,58,237,.3); border-radius:8px; padding:12px;">
+          <div style="color:var(--primary-light); font-weight:700; font-size:13px; margin-bottom:4px;">🖥️ CMS 是什么？</div>
+          <div style="font-size:12.5px; color:var(--muted);">Content Management System，内容管理系统，让你用图形界面管理内容，而不是手动编辑代码文件</div>
+        </div>
+        <div style="background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.3); border-radius:8px; padding:12px;">
+          <div style="color:#34d399; font-weight:700; font-size:13px; margin-bottom:4px;">🔗 两者结合？</div>
+          <div style="font-size:12.5px; color:var(--muted);">Front Matter CMS = 读取 Markdown 的 frontmatter，提供图形化界面，让你像用 WordPress 一样管理静态博客</div>
+        </div>
+      </div>
+      <div class="analogy"><b>类比：</b>就像杂志社的编辑部系统——记者（你）写完稿件后，编辑部系统帮你管理所有稿件的状态（已发布/草稿）、分类、封面图、发布日期，一目了然，不用翻文件夹找稿子。</div>
+    </div>
+
+    <!-- GitHub -->
+    <div class="card">
+      <div class="card-top" style="background:#e2e8f0;"></div>
+      <div class="card-ico">🐙</div>
+      <h3>GitHub — 代码的"云端稿件仓库"</h3>
+      <p>基于 Git 的<strong>代码托管平台</strong>。不仅保存代码历史，还是触发自动部署的<strong>信号源</strong>——每次 git push，Cloudflare 收到通知，自动拉取代码重新构建网站。</p>
+      <div class="analogy"><b>类比：</b>就像出版社的稿件仓库——每次修改都有记录（版本控制），快递员（Cloudflare）随时来取货发货，而且永远不会丢稿。</div>
+    </div>
+
+    <!-- Cloudflare Pages -->
+    <div class="card">
+      <div class="card-top" style="background:#f59e0b;"></div>
+      <div class="card-ico">☁️</div>
+      <h3>Cloudflare Pages — 全球CDN"发行渠道"</h3>
+      <p><strong>静态网站托管服务</strong>，连接 GitHub 仓库，自动构建并部署到全球 300+ 个 CDN 节点。<strong>完全免费</strong>，支持自定义域名、HTTPS、边缘函数。</p>
+      <div class="analogy"><b>类比：</b>就像全球连锁便利店——你的杂志被复制到全球300个城市，读者从最近的城市取货，速度极快，而且你不用管物流。</div>
+    </div>
+  </div>
+
+  <!-- Frontmatter 语法详解 -->
+  <div style="margin-top:40px;">
+    <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:20px; color:var(--primary-light);">📝 Frontmatter 语法详解（Front Matter CMS 管理的核心对象）</h3>
+    <div class="g2">
+      <div>
+        <div class="code-wrap">
+          <div class="code-bar">
+            <div class="dot" style="background:#ff5f57;"></div>
+            <div class="dot" style="background:#febc2e;"></div>
+            <div class="dot" style="background:#28c840;"></div>
+            <span class="code-label">src/content/blog/my-post.md</span>
+          </div>
+          <pre><code><span class="cm">---  ← Frontmatter 开始标记</span>
+<span class="cb">title</span>: <span class="cy">"我的第一篇博客"</span>
+<span class="cb">description</span>: <span class="cy">"关于Astro的入门文章"</span>
+<span class="cb">pubDate</span>: <span class="cg">2024-01-15</span>
+<span class="cb">author</span>: <span class="cy">"张三"</span>
+<span class="cb">tags</span>:
+  - <span class="cy">astro</span>
+  - <span class="cy">前端</span>
+<span class="cb">heroImage</span>: <span class="cy">"/images/cover.jpg"</span>
+<span class="cb">draft</span>: <span class="co">false</span>
+<span class="cm">---  ← Frontmatter 结束标记</span>
+
+<span class="cm">## 下面才是正文内容</span>
+
+什么是 Astro？Astro 是一个...</code></pre>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="hl hl-cyan">
+          <h4 style="color:#22d3ee;">Front Matter CMS 如何处理这些字段？</h4>
+          <ul>
+            <li><strong>title</strong> → 显示为文章标题输入框</li>
+            <li><strong>pubDate</strong> → 显示为日期选择器</li>
+            <li><strong>tags</strong> → 显示为标签多选框</li>
+            <li><strong>heroImage</strong> → 显示为图片选择器（媒体库）</li>
+            <li><strong>draft</strong> → 显示为"草稿/发布"开关</li>
+          </ul>
+        </div>
+        <div class="hl hl-purple">
+          <h4 style="color:var(--primary-light);">💡 核心价值</h4>
+          <ul>
+            <li>你不再需要手动写 YAML 格式</li>
+            <li>不会因为缩进错误导致解析失败</li>
+            <li>像用 WordPress 一样管理静态博客</li>
+            <li>所有文章一览无余，支持搜索过滤</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<hr>
+
+<!-- ════ §2 为什么 ════ -->
+<div class="page-wrap">
+<section class="sec" id="why">
+  <div class="sec-head">
+    <div class="sec-tag">② 为什么</div>
+    <h2>为什么选择这套技术栈？</h2>
+    <p>理解每个工具解决了什么痛点，才能真正用好它</p>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="card-top" style="background:#ff5d01;"></div>
+      <div class="card-ico">⚡</div>
+      <h3>为什么用 Astro？</h3>
+      <ul style="padding-left:16px; font-size:13.5px; color:var(--muted); margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+        <li>默认生成纯 HTML，<strong style="color:#e2e8f0;">加载极快</strong>（Core Web Vitals 高分）</li>
+        <li>内置 Markdown 支持，<strong style="color:#e2e8f0;">写博客超方便</strong></li>
+        <li>可混用 React/Vue，<strong style="color:#e2e8f0;">不锁定技术栈</strong></li>
+        <li>内容集合（Content Collections）<strong style="color:#e2e8f0;">批量管理文章</strong></li>
+        <li>SEO 友好，<strong style="color:#e2e8f0;">适合内容型网站</strong></li>
+      </ul>
+      <div class="analogy"><b>类比：</b>传统框架像"全功能豪华SUV"，Astro 像"轻量电动自行车"——去买菜不需要开坦克。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-top" style="background:#06b6d4;"></div>
+      <div class="card-ico">🖥️</div>
+      <h3>为什么用 Front Matter CMS？</h3>
+      <ul style="padding-left:16px; font-size:13.5px; color:var(--muted); margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+        <li>不需要离开 VS Code，<strong style="color:#e2e8f0;">一站式工作</strong></li>
+        <li>图形化管理 frontmatter，<strong style="color:#e2e8f0;">不怕写错 YAML</strong></li>
+        <li>内置媒体库，<strong style="color:#e2e8f0;">图片管理方便</strong></li>
+        <li>文章列表视图，<strong style="color:#e2e8f0;">内容一览无余</strong></li>
+        <li>支持自定义字段类型，<strong style="color:#e2e8f0;">灵活扩展</strong></li>
+        <li>完全本地，<strong style="color:#e2e8f0;">无需订阅费用</strong></li>
+      </ul>
+      <div class="analogy"><b>类比：</b>没有它就像用记事本管理100篇文章的元数据；有了它就像有了 Notion 数据库——一行一篇，清晰高效。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-top" style="background:#e2e8f0;"></div>
+      <div class="card-ico">🔄</div>
+      <h3>为什么用 GitHub？</h3>
+      <ul style="padding-left:16px; font-size:13.5px; color:var(--muted); margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+        <li><strong style="color:#e2e8f0;">版本控制</strong>：每次改动有记录，随时回滚</li>
+        <li><strong style="color:#e2e8f0;">触发部署</strong>：push = 自动更新网站</li>
+        <li><strong style="color:#e2e8f0;">协作</strong>：多人开发不互相覆盖</li>
+        <li><strong style="color:#e2e8f0;">备份</strong>：代码永不丢失</li>
+        <li><strong style="color:#e2e8f0;">CI/CD 集成</strong>：与 Cloudflare 深度连接</li>
+      </ul>
+      <div class="analogy"><b>类比：</b>就像 Google Docs 的历史记录，但专为代码设计，还能触发自动化流水线。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-top" style="background:#f59e0b;"></div>
+      <div class="card-ico">🌍</div>
+      <h3>为什么用 Cloudflare Pages？</h3>
+      <ul style="padding-left:16px; font-size:13.5px; color:var(--muted); margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+        <li><strong style="color:#e2e8f0;">完全免费</strong>（无限带宽、无限请求）</li>
+        <li><strong style="color:#e2e8f0;">全球 CDN</strong>，300+ 节点，访问极快</li>
+        <li><strong style="color:#e2e8f0;">自动 HTTPS</strong>，无需配置证书</li>
+        <li><strong style="color:#e2e8f0;">自定义域名</strong>，一键绑定</li>
+        <li><strong style="color:#e2e8f0;">push 即部署</strong>，30-60秒上线</li>
+        <li>支持<strong style="color:#e2e8f0;">预览部署</strong>（每个PR独立预览链接）</li>
+      </ul>
+      <div class="analogy"><b>类比：</b>相当于免费租了全球连锁超级服务器，运维全不用管。</div>
+    </div>
+
+    <div class="card" style="grid-column:span 1;">
+      <div class="card-top" style="background:#007acc;"></div>
+      <div class="card-ico">🧩</div>
+      <h3>为什么这套组合最优？</h3>
+      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+        <div style="background:rgba(255,255,255,.05); border-radius:8px; padding:10px 12px; font-size:13px;">
+          <span style="color:#34d399;">✓</span> <strong>全程本地</strong>：不依赖任何在线 CMS 服务
+        </div>
+        <div style="background:rgba(255,255,255,.05); border-radius:8px; padding:10px 12px; font-size:13px;">
+          <span style="color:#34d399;">✓</span> <strong>完全免费</strong>：所有工具均有免费方案
+        </div>
+        <div style="background:rgba(255,255,255,.05); border-radius:8px; padding:10px 12px; font-size:13px;">
+          <span style="color:#34d399;">✓</span> <strong>自动化</strong>：写完推送，网站自动更新
+        </div>
+        <div style="background:rgba(255,255,255,.05); border-radius:8px; padding:10px 12px; font-size:13px;">
+          <span style="color:#34d399;">✓</span> <strong>高性能</strong>：静态页面 + CDN，速度极快
+        </div>
+        <div style="background:rgba(255,255,255,.05); border-radius:8px; padding:10px 12px; font-size:13px;">
+          <span style="color:#34d399;">✓</span> <strong>可扩展</strong>：随时接入 React/Vue 组件
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<hr>
+
+<!-- ════ §3 怎么做 ════ -->
+<div class="page-wrap">
+<section class="sec" id="howto">
+  <div class="sec-head">
+    <div class="sec-tag">③ 怎么做</div>
+    <h2>从零开始：完整操作步骤</h2>
+    <p>按照这个流程，约 45 分钟完成从本地开发到全球部署</p>
+  </div>
+
+  <!-- ─ Phase 1 ─ -->
+  <div style="margin-bottom:44px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+      <span style="background:var(--primary); color:#fff; padding:5px 14px; border-radius:8px; font-size:12px; font-weight:700;">阶段一</span>
+      <h3 style="font-size:1.05rem; color:var(--primary-light);">环境准备</h3>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-l"><div class="step-n">1</div><div class="step-ln"></div></div>
+        <div class="step-body">
+          <h3>安装 Node.js（v18 或 v20 LTS）</h3>
+          <p>访问 <strong>nodejs.org</strong> 下载 LTS 版本。安装后验证：</p>
+          <div class="code-wrap">
+            <div class="code-bar"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div><span class="code-label">Terminal</span></div>
+            <pre><code><span class="cg">node</span> -v   <span class="cm"># 应显示 v18.x.x 或 v20.x.x</span>
+<span class="cg">npm</span> -v    <span class="cm"># 应显示 9.x.x 或 10.x.x</span></code></pre>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-l"><div class="step-n">2</div><div class="step-ln"></div></div>
+        <div class="step-body">
+          <h3>安装 VS Code 必备插件</h3>
+          <p>打开 VS Code，按 <kbd style="background:#1f2d45; padding:2px 7px; border-radius:4px; font-size:12px;">Ctrl+Shift+X</kbd> 搜索安装：</p>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:12px;">
+            <div style="background:rgba(6,182,212,.1); border:1px solid rgba(6,182,212,.3); border-radius:8px; padding:12px;">
+              <div style="color:#22d3ee; font-weight:700; font-size:13px;">📋 Front Matter CMS</div>
+              <div style="font-size:12px; color:var(--muted); margin-top:4px;">搜索 "Front Matter" by Elio Struyf — ⭐ 最重要</div>
+            </div>
+            <div style="background:rgba(255,93,1,.1); border:1px solid rgba(255,93,1,.3); border-radius:8px; padding:12px;">
+              <div style="color:#fb923c; font-weight:700; font-size:13px;">🚀 Astro</div>
+              <div style="font-size:12px; color:var(--muted); margin-top:4px;">官方插件，语法高亮 + 智能提示</div>
+            </div>
+            <div style="background:rgba(124,58,237,.1); border:1px solid rgba(124,58,237,.3); border-radius:8px; padding:12px;">
+              <div style="color:var(--primary-light); font-weight:700; font-size:13px;">✨ Prettier</div>
+              <div style="font-size:12px; color:var(--muted); margin-top:4px;">代码格式化，保持代码整洁</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-l"><div class="step-n">3</div><div class="step-ln"></div></div>
+        <div class="step-body">
+          <h3>配置 Git 全局用户信息</h3>
+          <div class="code-wrap">
+            <div class="code-bar"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div><span class="code-label">Terminal</span></div>
+            <pre><code><span class="cg">git</span> config --global user.name <span class="cy">"你的名字"</span>
+<span class="cg">git</span> config --global user.email <span class="cy">"你的邮箱@example.com"</span>
+<span class="cg">git</span> config --global init.defaultBranch main</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─ Phase 2 ─ -->
+  <div style="margin-bottom:44px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+      <span style="background:#ff5d01; color:#fff; padding:5px 14px; border-radius:8px; font-size:12px; font-weight:700;">阶段二</span>
+      <h3 style="font-size:1.05rem; color:var(--primary-light);">创建 Astro 项目</h3>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-l"><div class="step-n">4</div><div class="step-ln"></div></div>
+        <div class="step-body">
+          <h3>用脚手架创建项目（交互式向导）</h3>
+          <div class="code-wrap">
+            <div class="code-bar"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div><span class="code-label">Terminal</span></div>
+            <pre><code><span class="cg">npm</span> create astro@latest my-blog
+
+<span class="cm"># 交互式向导选项：</span>
+<span class="cm"># ✓ How would you like to start?</span>
+<span class="cm">#   → Use blog template  ← 选这个，自带博客结构</span>
+<span class="cm"># ✓ Install dependencies? → Yes</span>
+<span class="cm"># ✓ Initialize a git repository? → Yes</span>
+<span class="cm"># ✓ TypeScript? → Yes (Strict)</span>
+
+<span class="cb">cd</span> my-blog
+<span class="cg">npm</span> run dev   <span class="cm"># 启动本地开发服务器</span></code></pre>
+          </div>
+          <div class="hl hl-blue" style="margin-top:12px;">
+            <h4 style="color:#38bdf8;">📌 访问本地预览</h4>
+            <p style="font-size:13px; color:var(--muted);">打开浏览器访问 <strong style="color:#38bdf8;">http://localhost:4321</strong> 即可看到博客模板</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-l"><div class="step-n">5</div><div class="step-ln"></div></div>
+        <div class="step-body">
+          <h3>理解项目目录结构</h3>
+          <div class="code-wrap">
+            <div class="code-bar"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div><span class="code-label">项目结构</span></div>
+            <pre><code>my-blog/
+├── <span class="cb">src/</span>
+│   ├── <span class="cb">content/</span>              <span class="cm"># 📝 内容层（Markdown文章）</span>
+│   │   ├── <span class="cb">blog/</span>
+│   │   │   ├── <span class="cy">first-post.md</span>   <span class="cm"># 含 frontmatter 的文章</span>
+│   │   │   └── <span class="cy">second-post.md</span>
+│   │   └── <span class="cp">config.ts</span>         <span class="cm"># 定义 frontmatter 字段结构</span>
+│   ├── <span class="cb">layouts/</span>              <span class="cm"># 🎨 页面布局模板</span>
+│   │   └── <span class="cp">BlogPost.astro</span>
+│   ├── <span class="cb">pages/</span>                <span class="cm"># 📄 路由（文件名=URL路径）</span>
+│   │   ├── <span class="cp">index.astro</span>       <span class="cm"># → /</span>
+│   │   └── <span class="cb">blog/</span>
+│   │       └── <span class="cp">[...slug].astro</span> <span class="cm"># → /blog/文章名</span>
+│   └── <span class="cb">components/</span>           <span class="cm"># 🧩 可复用组件</span>
+├── <span class="cb">public/</span>                   <span class="cm"># 🖼️ 静态资源（图片等）</span>
+├── <span class="cy">astro.config.mjs</span>          <span class="cm"># ⚙️ Astro 配置</span>
+├── <span class="cy">frontmatter.json</span>          <span class="cm"># 📋 Front Matter CMS 配置（后面生成）</span>
+└── <span class="cy">package.json</span></code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-l"><div class="step-n">6</div><div class="step-ln"></div></div>
+        <div class="step-body">
+          <h3>配置内容集合（定义 frontmatter 字段类型）</h3>
+          <p>编辑 <code style="color:#79c0ff;">src/content/config.ts</code>，用 Zod 定义字段结构：</p>
+          <div class="code-wrap">
+            <div class="code-bar"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div><span class="code-label">src/content/config.ts</span></div>
+            <pre><code><span class="cp">import</span> { defineCollection, z } <span class="cp">from</span> <span class="cy">'astro:content'</span>;
+
+<span class="cp">const</span> blog = defineCollection({
+  type: <span class="cy">'content'</span>,
+  schema: z.object({
+    <span class="cb">title</span>:       z.string(),
+    <span class="cb">description</span>: z.string(),
+    <span class="cb">pubDate</span>:     z.coerce.date(),
+    <span class="cb">author</span>:      z.string().optional(),
+    <span class="cb">tags</span>:        z.array(z.string()).default([]),
+    <span class="cb">heroImage</span>:   z.string().optional(),
+    <span class="cb">draft</span>:       z.boolean().default(<span class="co">false</span>),
+  }),
+});
+
+<span class="cp">export const</span> collections = { blog };</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─ Phase 3 ─ -->
+  <div style="margin-bottom:44px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+      <span style="background:#06b6d4; color:#fff; padding:5px 14px; border-radius:8px; font-size:12px; font-weight:700;">阶段三</span>
+      <h3 style="font-size:1.05rem; color:var(--primary-light);">配置 Front Matter CMS</h3>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-l"><div class="step-n">7</div><div class="step-ln"></div></div>
+        <div class="step-body">
+          <h3>初始化 Front Matter CMS</h3>
+          <p>安装好插件后，按 <kbd style="background:#1f2d45; padding:2px 7px; border-radius:4px; font-size:12px;">Ctrl+Shift+P</kbd> 搜索并执行：</p>
+          <div class="code-wrap">
+            <div class="code-bar"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div><span class="code-label">VS Code 命令面板</span></div>
+            <pre><code><span class="cy">Front Matter: Initialize project</span>
+<span class="cm"># 这会在项目根目录生成 frontmatter.json 配置文件</span></code></pre>
+          </div>
+          <p style="margin-top:10px; font-size:13px; color:var(--muted);">或者直接点击 VS Code 左侧活动栏中的 <strong style="color:#22d3ee;">Front Matter 图标</strong>，然后点击 "Initialize project"</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-l"><div class="step-n">8</div><div class="step-ln"></div></div>
+        <div class="step-body">
+          <h3>配置 frontmatter.json（核心配置文件）</h3>
+          <div class="code-wrap">
+            <div class="code-bar"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div><span class="code-label">frontmatter.json（项目根目录）</span></div>
+            <pre><code>{
+  <span class="cm">// 告诉 Front Matter CMS 你的内容在哪里</span>
+  <span class="cb">"frontMatter.content.pageFolders"</span>: [
+    {
+      <span class="cb">"title"</span>: <span class="cy">"Blog"</span>,
+      <span class="cb">"path"</span>: <span class="cy">"[[workspace]]/src/content/
