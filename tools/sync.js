@@ -6,6 +6,7 @@
      ★ 同步范围 = 全站所有工具的 key（不只当前页），否则状态点永远无法变绿
    - 右下角状态点：绿=全部已同步 / 黄=同步中 / 灰=有未同步(或本地模式)
      悬停弹出面板：逐项状态 + 上次同步 + 「立即同步 / 上传全部」
+   - 引入页：全站每个页面都引（含首页与无数据工具页），因此进任意页即完成一次全站对账
    后端 API:  /api/sync/:key  （GET / PUT，见 functions/api/sync/[key].js）
    ══════════════════════════════════════════════════════════════════ */
 (function () {
@@ -32,9 +33,8 @@
     return a;
   }
 
-  var PAGE_KEYS = detectKeys();
-  if (PAGE_KEYS.length === 0) return; // 非数据类工具页，直接退出
-  var KEYS = allKeys();               // ★ 全站同步范围（状态点要能代表整站）
+  var PAGE_KEYS = detectKeys();       // 本页所属工具的 key（只用于判定“要不要刷新页面”；首页/无数据工具页为空）
+  var KEYS = allKeys();               // ★ 全站同步范围（状态点要能代表整站，故不再按页早退）
 
   var _setItem = localStorage.setItem.bind(localStorage);
   var _getItem = localStorage.getItem.bind(localStorage);
