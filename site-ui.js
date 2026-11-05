@@ -1,11 +1,11 @@
 /* ══════════════════════════════════════════════════════════════════
    site-ui.js —— 全站通用 UI 注入
-   1) 兜底注入 favicon（若页面 head 已有静态 link 则跳过）
-   2) 左下角悬浮「返回首页」按钮（首页自动不显示）
-   3) 挂 window.__CLOUD_AUTH__：仅用于区分「云端部署 / 本地开发」
-      - 访问密码门由后端 _middleware.js 负责，未验证根本进不到这些页面，
-        所以这里不再需要前端遮罩/身份判断。
-   在任意页面 <head> 引入即可：<script src="/site-ui.js"></script>
+   1) 兜底注入 favicon
+   2) 右下角悬浮「首页」按钮：点击回首页；悬停弹出工具抽屉可直接切换
+      （工具列表来自单一数据源 /tools.json，与首页共用）
+   3) 挂 window.__CLOUD_AUTH__：区分「云端部署 / 本地开发」
+   4) 暴露 window.__SITE_CORNER__()：返回右下角竖排容器，供 sync.js 挂载状态点
+   引入：<script src="/site-ui.js"></script>
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   // ── 1. favicon 兜底 ──
@@ -26,37 +26,98 @@
   }
   window.__CLOUD_AUTH__ = { active: detectActive(), ready: true };
 
-  // ── 2. 返回首页悬浮按钮 ──
+  // ── 共享样式：右下角竖排容器 + 悬停弹出的浮层（Home 抽屉与云同步面板复用）──
+  var css = document.createElement('style');
+  css.textContent = [
+    '.sc-item{position:relative}',
+    '.sc-pop{display:none;position:absolute;right:44px;bottom:0;z-index:99999}',
+    '.sc-item:hover .sc-pop{display:block}',
+    '#site-drawer{width:230px;max-height:62vh;overflow:auto;background:#fff;border:1px solid #e6e6e6;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,.16);padding:8px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}',
+    '#site-drawer .dh{font-size:11px;color:#aaa;padding:6px 8px 6px;letter-spacing:.5px}',
+    '#site-drawer a{display:flex;align-items:center;gap:10px;padding:9px 9px;border-radius:8px;text-decoration:none;color:#1d1d1f;line-height:1.2}',
+    '#site-drawer a:hover{background:#f2eeff}',
+    '#site-drawer a.cur{background:#efeaff}',
+    '#site-drawer a.cur .dn{color:#6c47ff}',
+    '#site-drawer .di{font-size:16px;width:18px;text-align:center;flex:none}',
+    '#site-drawer .dn{font-weight:600;font-size:13px}'
+  ].join('');
+  document.head.appendChild(css);
+
+  // ── 4. 右下角竖排容器（供本文件与 sync.js 共用）──
+  function ensureCorner() {
+    var r = document.getElementById('site-corner');
+    if (r) return r;
+    r = document.createElement('div');
+    r.id = 'site-corner';
+    r.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:99997;' +
+      'display:flex;flex-direction:column;align-items:flex-end;gap:10px;';
+    document.body.appendChild(r);
+    return r;
+  }
+  window.__SITE_CORNER__ = ensureCorner;
+
+  // ── 2. 首页按钮 + 工具抽屉（首页本身不显示）──
   var path;
   try { path = decodeURIComponent(location.pathname); } catch (e) { path = location.pathname; }
   var isHome = (path === '/' || /\/index\.html$/i.test(path) || path === '');
   if (isHome) return;
 
-  function homeBtn() {
+  function buildHome(rail) {
     if (document.getElementById('site-home-btn')) return;
+    var item = document.createElement('div');
+    item.className = 'sc-item';
+
+    var drawer = document.createElement('div');
+    drawer.className = 'sc-pop';
+    drawer.id = 'site-drawer';
+    drawer.innerHTML = '<div class="dh">🧰 工具切换</div><div id="site-drawer-list">加载中…</div>';
+
     var a = document.createElement('a');
     a.id = 'site-home-btn';
     a.href = '/';
-    a.title = '返回首页';
+    a.title = '返回首页（悬停可切换工具）';
     a.setAttribute('aria-label', '返回首页');
+    a.style.cssText = 'width:44px;height:44px;border-radius:50%;background:#6c47ff;' +
+      'display:flex;align-items:center;justify-content:center;text-decoration:none;' +
+      'box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;transition:background .2s ease;';
     a.innerHTML =
       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" ' +
       'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>';
-    a.style.cssText =
-      'position:fixed;left:14px;bottom:14px;z-index:99997;' +
-      'width:44px;height:44px;border-radius:50%;background:#6c47ff;' +
-      'display:flex;align-items:center;justify-content:center;text-decoration:none;' +
-      'box-shadow:0 4px 14px rgba(0,0,0,.25);border:none;cursor:pointer;' +
-      'transition:transform .15s ease,background .2s ease;';
-    a.addEventListener('mouseenter', function () { a.style.background = '#5a37e6'; a.style.transform = 'translateY(-2px)'; });
-    a.addEventListener('mouseleave', function () { a.style.background = '#6c47ff'; a.style.transform = ''; });
-    document.body.appendChild(a);
+    a.addEventListener('mouseenter', function () { a.style.background = '#5a37e6'; });
+    a.addEventListener('mouseleave', function () { a.style.background = '#6c47ff'; });
+
+    item.appendChild(drawer);
+    item.appendChild(a);
+    rail.appendChild(item);
+    loadDrawer();
   }
 
+  function loadDrawer() {
+    fetch('/tools.json', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (list) {
+        var box = document.getElementById('site-drawer-list');
+        if (!box) return;
+        box.innerHTML = '';
+        list.forEach(function (t) {
+          var el = document.createElement('a');
+          el.href = t.href;
+          if (t.href === path) el.className = 'cur';
+          el.innerHTML = '<span class="di">' + t.icon + '</span><span class="dn">' + t.name + '</span>';
+          box.appendChild(el);
+        });
+      })
+      .catch(function () {
+        var box = document.getElementById('site-drawer-list');
+        if (box) box.textContent = '加载失败';
+      });
+  }
+
+  function mount() { buildHome(ensureCorner()); }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', homeBtn);
+    document.addEventListener('DOMContentLoaded', mount);
   } else {
-    homeBtn();
+    mount();
   }
 })();
