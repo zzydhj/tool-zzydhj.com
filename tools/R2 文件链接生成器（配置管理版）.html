@@ -784,12 +784,14 @@
     // ── 启动 ─────────────────────────────────────────────
     initSelects();
 
-    // 预置一条默认数据（首次使用）
-    if (loadData('r2_buckets').length === 0) {
-      saveData('r2_buckets', [{ label: '通盛手表 - 客户Logo', bucket: 'tongshengwatch', prefix: 'customer-logo/' }]);
-    }
-    if (loadData('r2_domains').length === 0) {
-      saveData('r2_domains', [{ label: '通盛手表', value: 'https://tongshengwatch.zzydhj.com' }]);
+    // 预置一条默认数据（仅离线/本地开发；云端多用户模式空白起步）
+    if (!(window.__CLOUD_AUTH__ && window.__CLOUD_AUTH__.active)) {
+      if (loadData('r2_buckets').length === 0) {
+        saveData('r2_buckets', [{ label: '通盛手表 - 客户Logo', bucket: 'tongshengwatch', prefix: 'customer-logo/' }]);
+      }
+      if (loadData('r2_domains').length === 0) {
+        saveData('r2_domains', [{ label: '通盛手表', value: 'https://tongshengwatch.zzydhj.com' }]);
+      }
     }
     initSelects();
   </script>

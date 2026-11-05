@@ -54,7 +54,7 @@
 
     #preview {
       width: 460px;
-      border-radius: 16px;
+      border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
     }
@@ -541,7 +541,7 @@
           outCanvas.width = canvas.width;
           outCanvas.height = canvas.height;
           const ctx = outCanvas.getContext('2d');
-          const radius = 16 * 2;
+          const radius = 8 * 2;
           roundRectPath(ctx, 0, 0, canvas.width, canvas.height, radius);
           ctx.clip();
           ctx.drawImage(canvas, 0, 0);

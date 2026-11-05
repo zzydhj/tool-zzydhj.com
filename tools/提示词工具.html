@@ -903,8 +903,11 @@
 
     loadSettings();
     if (!loadFromStorage()) {
-      initDefaultData();
-      saveToStorage();
+      // 云端多用户模式：新用户空白起步，不注入默认种子（仅离线/本地开发才用默认）
+      if (!(window.__CLOUD_AUTH__ && window.__CLOUD_AUTH__.active)) {
+        initDefaultData();
+        saveToStorage();
+      }
     }
 
     // ============ 列数控制 ============

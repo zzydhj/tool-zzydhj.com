@@ -174,23 +174,34 @@
         desc: '填写信息实时预览，一键导出圆角透明 PNG 水印卡片',
         tag: '图片工具',
         href: '/tools/engineering-record-card.html'
+      },
+      {
+        icon: '💬',
+        name: '快捷回复话术库',
+        desc: '客服销售话术一键复制，支持分类、搜索、收藏、{变量}填值替换',
+        tag: '效率工具',
+        href: '/tools/快捷回复话术库.html'
       }
     ];
 
     // 自动渲染工具卡片
     const grid = document.getElementById('toolGrid');
-    tools.forEach(t => {
-      const a = document.createElement('a');
-      a.className = 'tool-card';
-      a.href = t.href;
-      a.innerHTML = `
+    function renderTools() {
+      grid.innerHTML = '';
+      tools.forEach(t => {
+        const a = document.createElement('a');
+        a.className = 'tool-card';
+        a.href = t.href;
+        a.innerHTML = `
     <div class="tool-icon">${t.icon}</div>
     <div class="tool-name">${t.name}</div>
     <div class="tool-desc">${t.desc}</div>
     <span class="tool-tag">${t.tag}</span>
   `;
-      grid.appendChild(a);
-    });
+        grid.appendChild(a);
+      });
+    }
+    renderTools();
   </script>
 
   <div class="footer">

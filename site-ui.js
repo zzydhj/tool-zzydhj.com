@@ -2,6 +2,9 @@
    site-ui.js —— 全站通用 UI 注入
    1) 兜底注入 favicon（若页面 head 已有静态 link 则跳过）
    2) 左下角悬浮「返回首页」按钮（首页自动不显示）
+   3) 挂 window.__CLOUD_AUTH__：仅用于区分「云端部署 / 本地开发」
+      - 访问密码门由后端 _middleware.js 负责，未验证根本进不到这些页面，
+        所以这里不再需要前端遮罩/身份判断。
    在任意页面 <head> 引入即可：<script src="/site-ui.js"></script>
    ══════════════════════════════════════════════════════════════════ */
 (function () {
@@ -14,13 +17,22 @@
     document.head.appendChild(link);
   }
 
+  // ── 3. 云端/本地判定（同步，供 sync.js 与各工具初始化读取）──
+  function detectActive() {
+    if (location.protocol === 'file:') return false;
+    var h = location.hostname || '';
+    if (h === 'localhost' || h === '' || h === '::1' || h === '[::1]' || /^127\./.test(h)) return false;
+    return true; // 已部署（能到这里说明已通过密码门）→ 启用云同步
+  }
+  window.__CLOUD_AUTH__ = { active: detectActive(), ready: true };
+
   // ── 2. 返回首页悬浮按钮 ──
   var path;
   try { path = decodeURIComponent(location.pathname); } catch (e) { path = location.pathname; }
   var isHome = (path === '/' || /\/index\.html$/i.test(path) || path === '');
   if (isHome) return;
 
-  function mount() {
+  function homeBtn() {
     if (document.getElementById('site-home-btn')) return;
     var a = document.createElement('a');
     a.id = 'site-home-btn';
@@ -43,8 +55,8 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mount);
+    document.addEventListener('DOMContentLoaded', homeBtn);
   } else {
-    mount();
+    homeBtn();
   }
 })();

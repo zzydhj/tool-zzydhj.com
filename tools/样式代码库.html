@@ -1306,9 +1306,11 @@
 
     // ══════════════════ STORAGE ══════════════════
     function load() {
+      var cloud = !!(window.__CLOUD_AUTH__ && window.__CLOUD_AUTH__.active);
       try {
         const r = localStorage.getItem(SK);
         if (r) { S = JSON.parse(r); }
+        else if (cloud) { S = { categories: [], snippets: [], activeCat: 'all' }; }
         else { S = { categories: [...DEFAULT_CATS], snippets: [...DEFAULT_SNIPPETS], activeCat: 'all' }; save(); }
       } catch (err) { S = { categories: [...DEFAULT_CATS], snippets: [...DEFAULT_SNIPPETS], activeCat: 'all' }; }
       if (!S.activeCat) S.activeCat = 'all';

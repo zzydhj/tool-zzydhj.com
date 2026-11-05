@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快捷回复话术库</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script src="/site-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            font-size: 13px;
+        }
+
+        /* ===== 顶栏 ===== */
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1d1d1f;
+            white-space: nowrap;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 7px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #6c47ff;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #5a38e0;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #34c759;
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #28a745;
+        }
+
+        .btn-danger {
+            background: #ff3b30;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #e0322a;
+        }
+
+        .btn-warning {
+            background: #ff9500;
+            color: #fff;
+        }
+
+        .btn-warning:hover {
+            background: #e08500;
+        }
+
+        /* ===== 搜索框 ===== */
+        .search-bar {
+            flex: 1;
+            max-width: 320px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 6px 10px 6px 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #f5f5f7;
+            outline: none;
+        }
+
+        .search-bar input:focus {
+            border-color: #6c47ff;
+            background: #fff;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #999;
+            font-size: 14px;
+            padding: 2px 4px;
+            border-radius: 50%;
+            line-height: 1;
+            transition: all 0.15s;
+        }
+
+        .search-clear:hover {
+            background: #e0e0e0;
+            color: #555;
+        }
+
+        .search-clear.visible {
+            display: block;
+        }
+
+        /* ===== 双栏布局（侧栏导航 + 内容区）===== */
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .layout {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+
+        /* 左：分类导航 */
+        .sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: #fff;
+            border-right: 1px solid #e8e8e8;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .side-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #999;
+            letter-spacing: .5px;
+        }
+
+        .side-manage {
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #666;
+            padding: 3px 8px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .side-manage:hover {
+            background: #e6e0ff;
+            color: #6c47ff;
+        }
+
+        .cat-nav {
+            overflow-y: auto;
+            padding: 0 8px 12px;
+            flex: 1;
+            scrollbar-width: thin;
+        }
+
+        .cat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            text-align: left;
+            border: none;
+            background: none;
+            cursor: pointer;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #444;
+            transition: background .12s, color .12s;
+            position: relative;
+        }
+
+        .cat-item:hover {
+            background: #f4f2fb;
+        }
+
+        .cat-item.active {
+            background: #efeaff;
+            color: #6c47ff;
+            font-weight: 600;
+        }
+
+        .cat-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 3px;
+            border-radius: 3px;
+            background: #6c47ff;
+        }
+
+        .cat-item .cat-ico {
+            font-size: 13px;
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .cat-item .cat-label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cat-item .cat-num {
+            font-size: 11px;
+            color: #999;
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 0 7px;
+            min-width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .cat-item.active .cat-num {
+            background: #dcd0ff;
+            color: #6c47ff;
+        }
+
+        .cat-item.cat-dragging {
+            opacity: .4;
+        }
+
+        .cat-item.cat-drag-over {
+            box-shadow: inset 0 2px 0 0 #6c47ff;
+        }
+
+        .cat-item.cat-long-press-ready {
+            cursor: grab;
+            background: #efeaff;
+        }
+
+        @media (max-width: 720px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: auto;
+                border-right: none;
+                border-bottom: 1px solid #e8e8e8;
+            }
+
+            .cat-nav {
+                display: flex;
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 4px 10px 10px;
+                gap: 6px;
+            }
+
+            .cat-item {
+                width: auto;
+                flex-shrink: 0;
+                padding: 6px 12px;
+            }
+
+            .cat-item.active::before {
+                display: none;
+            }
+        }
+
+        /* ===== 主区域 ===== */
+        .main {
+            padding: 12px 20px;
+        }
+
+        .section {
+            margin-bottom: 16px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-title .title-text {
+            cursor: default;
+        }
+
+        .section-title .title-edit-btn {
+            display: none;
+            font-size: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #bbb;
+            padding: 0 2px;
+            border-radius: 3px;
+            transition: color 0.15s;
+            line-height: 1;
+        }
+
+        .section-title:hover .title-edit-btn {
+            display: inline-flex;
+        }
+
+        .section-title .title-edit-btn:hover {
+            color: #6c47ff;
+            background: #f0eeff;
+        }
+
+        .section-title .title-input {
+            display: none;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid #6c47ff;
+            border-radius: 5px;
+            padding: 1px 6px;
+            outline: none;
+            background: #fff;
+            width: auto;
+            min-width: 80px;
+            max-width: 200px;
+        }
+
+        .section-title.editing .title-text,
+        .section-title.editing .title-edit-btn {
+            display: none;
+        }
+
+        .section-title.editing .title-input {
+            display: inline-block;
+        }
+
+        .section-count {
+            background: #e8e3ff;
+            color: #6c47ff;
+            border-radius: 10px;
+            padding: 1px 7px;
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .section-fav .section-title {
+            color: #ff9500;
+        }
+
+        .section-fav .section-count {
+            background: #fff3e0;
+            color: #ff9500;
+        }
+
+        /* 旧的网格卡片样式（.reply-card/.card-body/.copy-btn/.icon-btn 等）已由下方「内容区 + 沉浸阅读卡片」样式统一取代 */
+
+        /* ===== 弹窗 ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            width: 560px;
+            max-width: 95vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h2 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #6c47ff;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.6;
+        }
+
+        .form-tip {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        .cat-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .cat-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f0eeff;
+            color: #6c47ff;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .cat-chip .del-cat {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6c47ff;
+            font-size: 14px;
+            padding: 0 0 0 2px;
+            line-height: 1;
+        }
+
+        .cat-chip .del-cat:hover {
+            color: #ff3b30;
+        }
+
+        /* 填值复制：变量输入 + 实时预览 */
+        .fill-var {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .fill-var .var-key {
+            width: 120px;
+            flex-shrink: 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #b8860b;
+            background: #fff3cd;
+            border-radius: 5px;
+            padding: 4px 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fill-var input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 7px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .fill-var input:focus {
+            border-color: #6c47ff;
+        }
+
+        .fill-preview {
+            background: #f7f7f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+
+        .fill-preview .ph-empty {
+            background: #ffe0e0;
+            color: #d33;
+            border-radius: 3px;
+            padding: 0 3px;
+        }
+
+        /* ===== 提示 ===== */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1d1d1f;
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .long-press-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #6c47ff;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform linear;
+            z-index: 9998;
+        }
+
+        .empty {
+            text-align: center;
+            color: #aaa;
+            padding: 40px 0;
+            font-size: 13px;
+        }
+
+        .backup-status {
+            font-size: 11px;
+            color: #999;
+            margin-left: 8px;
+        }
+
+        @media (max-width: 500px) {
+            .header {
+                padding: 8px 12px;
+                flex-wrap: wrap;
+            }
+
+            .header-actions {
+                margin-left: 0;
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        /* ══════ 内容区 + 沉浸阅读卡片（以下规则覆盖前面的旧网格样式）══════ */
+        .content {
+            flex: 1;
+            min-width: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-head {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: rgba(245, 245, 247, .88);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid #ececec;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .content-head .ch-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1d1d1f;
+        }
+
+        .content-head .ch-q {
+            color: #6c47ff;
+        }
+
+        .content-head .ch-count {
+            background: #e8e3ff;
+            color: #6c47ff;
+            border-radius: 10px;
+            padding: 1px 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .content-head .ch-sub {
+            margin-left: auto;
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        .content-head .section-title {
+            font-size: 15px;
+            color: #1d1d1f;
+        }
+
+        .main {
+            padding: 6px 24px 40px;
+        }
+
+        .reply-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            align-content: start;
+            max-width: 920px;
+        }
+
+        .reply-card {
+            display: block;
+            position: relative;
+            background: #fff;
+            border: 1px solid #ececec;
+            border-left: 3px solid #e6e6e6;
+            border-radius: 10px;
+            padding: 12px 16px 12px 26px;
+            cursor: default;
+            user-select: none;
+            transition: box-shadow .15s, border-color .15s;
+        }
+
+        .reply-card:hover {
+            box-shadow: 0 3px 14px rgba(0, 0, 0, .07);
+            border-color: #e0d8ff;
+            border-left-color: #b7a6ff;
+        }
+
+        .reply-card.fav-card {
+            border-color: #ffedc7;
+            border-left-color: #ffb400;
+        }
+
+        .reply-card.fav-card:hover {
+            border-color: #ffdd99;
+            border-left-color: #ffb400;
+        }
+
+        .reply-card.dragging {
+            opacity: .4;
+            border-style: dashed;
+        }
+
+        .reply-card.drag-over {
+            border-color: #6c47ff;
+            box-shadow: 0 0 0 2px rgba(108, 71, 255, .2);
+        }
+
+        .reply-card.long-press-ready {
+            cursor: grab;
+            box-shadow: 0 0 0 3px rgba(108, 71, 255, .25);
+        }
+
+        .rc-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .rc-no {
+            font-size: 11px;
+            font-weight: 700;
+            color: #8f87b5;
+            background: #f0edfb;
+            border-radius: 5px;
+            padding: 1px 6px;
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: .3px;
+        }
+
+        .rc-tag {
+            background: #f0eeff;
+            color: #6c47ff;
+            border-radius: 4px;
+            padding: 1px 7px;
+            font-size: 10px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .rc-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .rc-star {
+            color: #ffb400;
+            font-size: 12px;
+        }
+
+        /* 正文为绝对主角：完整、不截断、行高舒适 */
+        .rc-text {
+            font-size: 14px;
+            line-height: 1.75;
+            color: #1d1d1f;
+            white-space: pre-wrap;
+            word-break: break-word;
+            cursor: pointer;
+        }
+
+        .rc-text:hover {
+            color: #000;
+        }
+
+        .rc-desc {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #a5a5a5;
+        }
+
+        .reply-card .ph {
+            background: #fff3cd;
+            color: #b8860b;
+            border-radius: 3px;
+            padding: 0 3px;
+            font-weight: 600;
+        }
+
+        .reply-card mark.hl {
+            background: #ffe27a;
+            color: #7a5b00;
+            border-radius: 3px;
+            padding: 0 1px;
+            font-weight: 600;
+        }
+
+        /* 操作条：默认隐藏，hover / 键盘聚焦才浮现 */
+        .rc-tools {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            opacity: 0;
+            transform: translateY(-2px);
+            transition: opacity .15s, transform .15s;
+            background: rgba(255, 255, 255, .94);
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 2px 3px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+        }
+
+        .reply-card:hover .rc-tools,
+        .reply-card:focus-within .rc-tools {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tool-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            color: #999;
+            line-height: 1;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: all .12s;
+            white-space: nowrap;
+        }
+
+        .tool-btn:hover {
+            background: #f0eeff;
+            color: #6c47ff;
+        }
+
+        .tool-btn.copy-main {
+            color: #6c47ff;
+            font-weight: 600;
+        }
+
+        .tool-btn.fav-active {
+            color: #ffb400;
+        }
+
+        .tool-btn.copied {
+            color: #34c759;
+        }
+
+        .tool-btn.del:hover {
+            background: #ffeceb;
+            color: #ff3b30;
+        }
+
+        /* 拖拽手柄：hover 才显 */
+        .drag-handle {
+            position: absolute;
+            left: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ccc;
+            font-size: 13px;
+            cursor: grab;
+            opacity: 0;
+            transition: opacity .15s;
+            padding: 4px;
+        }
+
+        .reply-card:hover .drag-handle {
+            opacity: 1;
+        }
+
+        @media (max-width: 720px) {
+            .main {
+                padding: 6px 14px 40px;
+            }
+
+            .content-head {
+                padding: 10px 14px;
+            }
+
+            /* 触屏无 hover，操作条常驻显示 */
+            .rc-tools {
+                opacity: 1;
+                transform: none;
+                position: static;
+                justify-content: flex-end;
+                box-shadow: none;
+                border: none;
+                background: none;
+                padding: 4px 0 0;
+            }
+
+            .drag-handle {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>💬 快捷回复话术库</h1>
+        <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索话术..." oninput="onSearchInput()">
+            <button class="search-clear" id="searchClear" onclick="clearSearch()" title="清除搜索">✕</button>
+        </div>
+        <div class="header-actions">
+            <span class="backup-status" id="backupStatus">💾 已保存</span>
+            <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 导入</button>
+            <input type="file" id="importFile" accept=".xlsx,.xls,.csv,.html" style="display:none"
+                onchange="importFile(event)">
+            <button class="btn btn-secondary" onclick="exportExcel()">📤 导出</button>
+            <button class="btn btn-warning" onclick="manualBackup()">💾 备份</button>
+            <button class="btn btn-primary" onclick="openAddModal()">＋ 添加话术</button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="side-head">
+                <span>分类</span>
+                <button class="side-manage" onclick="openCatModal()" title="管理分类 / 新建分类">⚙ 管理</button>
+            </div>
+            <nav class="cat-nav" id="catNav"></nav>
+        </aside>
+        <div class="content">
+            <div class="content-head" id="contentHead"></div>
+            <div class="main" id="mainContent"></div>
+        </div>
+    </div>
+
+    <!-- 添加 / 编辑话术 -->
+    <div class="modal-overlay" id="replyModal">
+        <div class="modal">
+            <h2 id="modalTitle">添加话术</h2>
+            <div class="form-group">
+                <label>标题 *</label>
+                <input type="text" id="fName" placeholder="话术简称，如：催付款话术">
+            </div>
+            <div class="form-group">
+                <label>分类 *</label>
+                <select id="fCategory"></select>
+            </div>
+            <div class="form-group">
+                <label>话术内容 *</label>
+                <textarea id="fContent" placeholder="输入完整话术，用 {客户称呼} 标记可替换的变量..." oninput="updateVarHint()"></textarea>
+                <div class="form-tip" id="varHint">💡 用花括号包裹变量，如 {姓名}、{订单号}，复制前可一键填值替换</div>
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input type="text" id="fDesc" placeholder="使用场景说明（可选）">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('replyModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveReply()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 填值复制 -->
+    <div class="modal-overlay" id="fillModal">
+        <div class="modal">
+            <h2>填值并复制</h2>
+            <div id="fillVars"></div>
+            <div class="form-group" style="margin-top:4px">
+                <label>预览</label>
+                <div class="fill-preview" id="fillPreview"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('fillModal')">取消</button>
+                <button class="btn btn-success" onclick="copyFilled()">📋 复制替换后内容</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分类管理 -->
+    <div class="modal-overlay" id="catModal">
+        <div class="modal">
+            <h2>管理分类</h2>
+            <div id="catList" class="cat-list"></div>
+            <div class="form-group" style="display:flex;gap:8px;margin-bottom:0">
+                <input type="text" id="newCatInput" placeholder="输入新分类名称" style="flex:1"
+                    onkeydown="if(event.key==='Enter')addCategory()">
+                <button class="btn btn-primary" onclick="addCategory()">添加</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('catModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="long-press-bar" id="longPressBar"></div>
+
+    <script src="sync.js"></script>
+    <script>
+        // ============ 常量与状态 ============
+        const STORAGE_KEY = 'reply_scripts_data';
+        const VAR_RE = /\{([^{}]+)\}/g;
+
+        let categories = ['All', '⭐ 收藏', '售前接待', '报价促单', '售后处理', '物流发货', '投诉安抚', '节日祝福', '添加好友'];
+        let activeTab = 'All';
+        let editingId = null;
+        let scripts = [];
+        let nextId = 1;
+        let curQuery = '';
+
+        // 拖拽相关
+        let dragSrcEl = null;
+        let longPressTimer = null;
+        let tabLongPressTimer = null;
+        let tabDragSrcEl = null;
+        let tabIsDragging = false;
+
+        // 填值复制临时状态
+        let fillSource = '';
+        let fillVars = [];
+
+        // ============ 数据持久化 ============
+        // 优先读取 HTML 内嵌的备份数据（从备份文件打开时），否则读 localStorage
+        function loadFromStorage() {
+            const embedded = document.getElementById('__EMBEDDED_BACKUP_DATA__');
+            if (embedded) {
+                try {
+                    const data = JSON.parse(embedded.textContent);
+                    scripts = data.scripts || [];
+                    categories = data.categories || categories;
+                    nextId = data.nextId || 1;
+                    saveToStorage();
+                    embedded.remove();
+                    console.log('✅ 已从内嵌备份恢复数据');
+                    return true;
+                } catch (e) {
+                    console.warn('内嵌备份数据解析失败', e);
+                }
+            }
+
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                try {
+                    const data = JSON.parse(raw);
+                    scripts = data.scripts || [];
+                    categories = data.categories || categories;
+                    nextId = data.nextId || 1;
+                    return true;
+                } catch (e) {
+                    console.warn('读取存储数据失败，使用默认数据', e);
+                }
+            }
+            return false;
+        }
+
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ scripts, categories, nextId }));
+            updateBackupStatus();
+        }
+
+        function onDataChanged() { saveToStorage(); }
+
+        // ============ 默认话术 ============
+        function initDefaultData() {
+            scripts = [
+                { id: 1, name: '首次问候', desc: '客户首次咨询的标准开场', category: '售前接待', content: '您好{称呼}，欢迎咨询{公司名}！我是您的专属顾问{姓名}，很高兴为您服务，请问有什么可以帮您？', fav: true, order: 0 },
+                { id: 2, name: '需求确认', desc: '进一步明确客户具体需求', category: '售前接待', content: '为了给您更精准的方案，想跟您确认几个问题：\n1. 您的使用场景是？\n2. 大概的预算范围？\n3. 期望的交付时间？', fav: false, order: 1 },
+                { id: 3, name: '正式报价', desc: '发送报价单时的话术', category: '报价促单', content: '{称呼}您好，根据您的需求，方案报价为 {金额} 元，包含{服务内容}。详细报价单已发您，请查收~', fav: true, order: 2 },
+                { id: 4, name: '催付尾款', desc: '订单待付款的礼貌提醒', category: '报价促单', content: '{称呼}您好，您的订单{订单号}还未完成支付哦，今天下单可享受{优惠}，库存有限，建议尽快锁定~', fav: false, order: 3 },
+                { id: 5, name: '限时优惠逼单', desc: '制造紧迫感促成下单', category: '报价促单', content: '{称呼}，跟您说个好消息~ 您关注的{产品名}本周有活动，立减{优惠金额}，名额只剩{剩余数量}个，需要我帮您先占一个吗？', fav: false, order: 4 },
+                { id: 6, name: '售后问题受理', desc: '客户反馈问题的安抚开场', category: '售后处理', content: '{称呼}非常抱歉给您带来不便！我已经记下您反馈的{问题描述}，会第一时间为您处理，请您放心。方便提供一下{订单号}吗？', fav: true, order: 5 },
+                { id: 7, name: '退换货说明', desc: '告知退换货流程', category: '售后处理', content: '{称呼}您好，我们支持 7 天无理由退换。请您保持商品完好，在订单页申请退货，填写{快递单号}寄回，收到后我们会在 1-3 个工作日内为您处理退款。', fav: false, order: 6 },
+                { id: 8, name: '发货通知', desc: '商品发出后的告知', category: '物流发货', content: '{称呼}您好，您购买的{产品名}已为您安排发出 📦，快递单号：{快递单号}（{快递公司}），预计{到货时间}送达，请注意查收~', fav: false, order: 7 },
+                { id: 9, name: '物流异常致歉', desc: '物流延误/丢件的安抚', category: '物流发货', content: '{称呼}非常抱歉，您的包裹{快递单号}因{原因}出现延迟，我已联系快递优先加急处理，有任何进展会第一时间同步您，感谢您的理解！', fav: false, order: 8 },
+                { id: 10, name: '投诉情绪安抚', desc: '面对强烈不满先共情', category: '投诉安抚', content: '{称呼}，非常理解您现在的心情，这件事确实是我们做得不够好，给您添麻烦了。我一定负责到底，现在马上为您{解决方案}，您看可以吗？', fav: true, order: 9 },
+                { id: 11, name: '补偿方案', desc: '提供补偿以挽回客户', category: '投诉安抚', content: '{称呼}，为表歉意，我们为您申请了{补偿内容}。后续也会加强{改进点}，避免类似问题再次发生。希望能稍微弥补给您带来的不便 🙏', fav: false, order: 10 },
+                { id: 12, name: '节日祝福', desc: '群发或一对一节日问候', category: '节日祝福', content: '{称呼}，{节日名}快乐！感谢您一直以来的支持与信任，祝您和家人{祝福语}。有任何需要随时找我~', fav: false, order: 11 },
+                { id: 13, name: '生日祝福', desc: '客户生日关怀', category: '节日祝福', content: '{称呼}，今天是您的生日 🎂，{公司名}全体小伙伴祝您生日快乐、万事如意！特为您送上{生日福利}，愿您岁岁常欢愉~', fav: false, order: 12 },
+                { id: 14, name: '添加好友语', desc: '发送好友申请时的验证语', category: '添加好友', content: '{称呼}您好，我是{公司名}的{姓名}，负责{业务}，很高兴认识您，后续有任何问题都可以随时咨询我~', fav: false, order: 13 },
+                { id: 15, name: '朋友圈互动', desc: '评论/点赞后的私聊破冰', category: '添加好友', content: '{称呼}，刚看到您发的{内容}很有共鸣！最近忙吗？有空一起喝个咖啡，顺便也跟您同步下{相关动态}~', fav: false, order: 14 },
+            ];
+            nextId = 16;
+        }
+
+        if (!loadFromStorage()) {
+            // 云端多用户模式：新用户空白起步，不注入默认种子（仅离线/本地开发才用默认）
+            if (!(window.__CLOUD_AUTH__ && window.__CLOUD_AUTH__.active)) {
+                initDefaultData();
+                saveToStorage();
+            }
+        }
+
+        // ============ 工具函数 ============
+        function escHtml(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // 提取话术中的所有变量名（去重、保序）
+        function extractVars(text) {
+            const set = [];
+            let m;
+            VAR_RE.lastIndex = 0;
+            while ((m = VAR_RE.exec(text)) !== null) {
+                const v = m[1].trim();
+                if (v && !set.includes(v)) set.push(v);
+            }
+            return set;
+        }
+
+        // 渲染话术正文：变量高亮为 .ph，并对搜索命中的普通片段高亮 <mark>
+        function escReg(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+        function hlSearch(escSeg, q) {
+            if (!q) return escSeg;
+            try {
+                return escSeg.replace(new RegExp('(' + escReg(escHtml(q)) + ')', 'gi'), '<mark class="hl">$1</mark>');
+            } catch (e) { return escSeg; }
+        }
+        function renderBodyHtml(text, q) {
+            let out = '', last = 0, m;
+            VAR_RE.lastIndex = 0;
+            const seg = raw => hlSearch(escHtml(raw), q);
+            while ((m = VAR_RE.exec(text)) !== null) {
+                out += seg(text.slice(last, m.index));
+                out += `<span class="ph">{${escHtml(m[1])}}</span>`;
+                last = m.index + m[0].length;
+            }
+            out += seg(text.slice(last));
+            return out;
+        }
+
+        // ============ 搜索框 ============
+        function onSearchInput() {
+            const input = document.getElementById('searchInput');
+            document.getElementById('searchClear').classList.toggle('visible', input.value.length > 0);
+            renderAll();
+        }
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            document.getElementById('searchClear').classList.remove('visible');
+            renderAll();
+            input.focus();
+        }
+
+        // ============ RENDER ============
+        function renderSidebar() {
+            const nav = document.getElementById('catNav');
+            const iconOf = c => c === 'All' ? '📋' : c === '⭐ 收藏' ? '⭐' : '🏷';
+            const labelOf = c => c === 'All' ? '全部话术' : c === '⭐ 收藏' ? '收藏' : c;
+            const countOf = c => c === 'All' ? scripts.length
+                : c === '⭐ 收藏' ? scripts.filter(s => s.fav).length
+                    : scripts.filter(s => s.category === c).length;
+            nav.innerHTML = categories.map(c => `
+    <button class="cat-item ${!curQuery && activeTab === c ? 'active' : ''} ${(c === 'All' || c === '⭐ 收藏') ? 'cat-fixed' : ''}" data-category="${escHtml(c)}">
+      <span class="cat-ico">${iconOf(c)}</span>
+      <span class="cat-label">${escHtml(labelOf(c))}</span>
+      <span class="cat-num">${countOf(c)}</span>
+    </button>`).join('');
+
+            nav.querySelectorAll('.cat-item').forEach(it => {
+                it.addEventListener('click', function () { if (tabIsDragging) return; setTab(this.dataset.category); });
+            });
+            bindTabDrag();
+        }
+
+        function setTab(c) {
+            activeTab = c;
+            const si = document.getElementById('searchInput');
+            if (si) { si.value = ''; document.getElementById('searchClear').classList.remove('visible'); }
+            renderAll();
+        }
+
+        function getFiltered() {
+            const raw = curQuery.trim();
+            // 输入纯数字或 #数字 → 按固定编号直达该条
+            const num = /^#?(\d{1,4})$/.exec(raw);
+            if (num) {
+                const byId = scripts.filter(s => s.id === parseInt(num[1], 10));
+                if (byId.length) return byId;
+            }
+            const q = raw.toLowerCase();
+            if (q) {
+                return scripts.filter(s => s.name.toLowerCase().includes(q) ||
+                    (s.desc || '').toLowerCase().includes(q) || s.content.toLowerCase().includes(q));
+            }
+            if (activeTab === 'All') return scripts.slice();
+            if (activeTab === '⭐ 收藏') return scripts.filter(s => s.fav);
+            return scripts.filter(s => s.category === activeTab);
+        }
+
+        function renderAll() {
+            curQuery = document.getElementById('searchInput').value.trim();
+            renderSidebar();
+            const items = getFiltered().sort((a, b) => a.order - b.order);
+            document.getElementById('contentHead').innerHTML = buildContentHead(activeTab, items.length, curQuery);
+            const container = document.getElementById('mainContent');
+            if (items.length === 0) {
+                const msg = curQuery ? '没有找到匹配的话术 🔍'
+                    : activeTab === '⭐ 收藏' ? '还没有收藏，点话术右上角的 ⭐ 收藏常用回复'
+                        : '这个分类还没有话术，点右上「＋ 添加话术」开始';
+                container.innerHTML = `<div class="empty">${msg}</div>`;
+            } else {
+                container.innerHTML = `<div class="reply-list" data-group="main">${items.map(s => renderCard(s)).join('')}</div>`;
+            }
+            afterRender();
+        }
+
+        function afterRender() {
+            bindDrag();
+            bindSectionTitleEdit();
+        }
+
+        function buildContentHead(tab, n, q) {
+            if (q) return `<span class="ch-title">搜索 <span class="ch-q">“${escHtml(q)}”</span></span><span class="ch-count">${n} 条</span><span class="ch-sub">已搜全部分类</span>`;
+            if (tab === 'All') return `<span class="ch-title">全部话术</span><span class="ch-count">${n}</span>`;
+            if (tab === '⭐ 收藏') return `<span class="ch-title">⭐ 收藏</span><span class="ch-count">${n}</span>`;
+            return `<div class="section-title">
+      <span class="title-text">${escHtml(tab)}</span>
+      <input class="title-input" type="text" maxlength="30"
+        onblur="finishEditingTitle(this.closest('.section-title'), true)"
+        onkeydown="if(event.key==='Enter'){this.blur()}else if(event.key==='Escape'){finishEditingTitle(this.closest('.section-title'),false)}">
+      <button class="title-edit-btn" title="重命名分类">✏️</button>
+      <span class="ch-count">${n}</span>
+    </div>`;
+        }
+
+        function renderCard(s) {
+            const vars = extractVars(s.content);
+            const fillBtn = vars.length
+                ? `<button class="tool-btn" onclick="openFillModal(${s.id})" title="替换变量后再复制">✍ 填值(${vars.length})</button>`
+                : '';
+            return `
+    <div class="reply-card ${s.fav ? 'fav-card' : ''}" data-id="${s.id}" draggable="false">
+      <span class="drag-handle" title="长按1秒可拖拽排序">⠿</span>
+      <div class="rc-tools">
+        <button class="tool-btn copy-main" onclick="copyScript(${s.id}, this)" title="复制原文">📋 复制</button>
+        ${fillBtn}
+        <button class="tool-btn ${s.fav ? 'fav-active' : ''}" onclick="toggleFav(${s.id})" title="${s.fav ? '取消收藏' : '收藏'}">⭐</button>
+        <button class="tool-btn" onclick="openEditModal(${s.id})" title="编辑">✏️</button>
+        <button class="tool-btn del" onclick="deleteScript(${s.id})" title="删除">🗑️</button>
+      </div>
+      <div class="rc-meta">
+        <span class="rc-no" title="固定编号，不随排序/搜索变化；可在搜索框输入 ${s.id} 或 #${s.id} 直达">#${String(s.id).padStart(2, '0')}</span>
+        <span class="rc-tag">${escHtml(s.category)}</span>
+        <span class="rc-name" title="${escHtml(s.name)}">${escHtml(s.name)}</span>
+        ${s.fav ? '<span class="rc-star">★</span>' : ''}
+      </div>
+      <div class="rc-text" onclick="copyScript(${s.id}, this)" title="点击复制话术">${renderBodyHtml(s.content, curQuery)}</div>
+      ${s.desc ? `<div class="rc-desc">${escHtml(s.desc)}</div>` : ''}
+    </div>`;
+        }
+
+        // （已移除展开/收起：正文默认完整显示，提升阅读效率）
+
+        // ============ COPY（直接复制原文） ============
+        function copyScript(id, btn) {
+            const s = scripts.find(x => x.id === id);
+            if (!s) return;
+            const vars = extractVars(s.content);
+            doCopy(s.content).then(() => {
+                showToast(vars.length ? `✅ 已复制（含 ${vars.length} 个变量，记得替换 { }）` : '✅ 已复制到剪贴板');
+                if (btn && btn.classList.contains('copy-main')) {
+                    btn.innerHTML = '✅ 已复制';
+                    btn.classList.add('copied');
+                    setTimeout(() => { btn.innerHTML = '📋 复制'; btn.classList.remove('copied'); }, 1500);
+                }
+            });
+        }
+
+        function doCopy(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
+            }
+            return legacyCopy(text);
+        }
+        function legacyCopy(text) {
+            return new Promise(resolve => {
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); } catch (e) { }
+                document.body.removeChild(ta);
+                resolve();
+            });
+        }
+
+        // ============ 填值复制 ============
+        function openFillModal(id) {
+            const s = scripts.find(x => x.id === id);
+            if (!s) return;
+            fillSource = s.content;
+            fillVars = extractVars(s.content);
+            const box = document.getElementById('fillVars');
+            box.innerHTML = fillVars.map((v, i) => `
+        <div class="fill-var">
+          <span class="var-key" title="${escHtml(v)}">{${escHtml(v)}}</span>
+          <input type="text" data-var="${escHtml(v)}" placeholder="请输入 ${escHtml(v)}" oninput="renderFillPreview()">
+        </div>`).join('');
+            renderFillPreview();
+            document.getElementById('fillModal').classList.add('show');
+            const first = box.querySelector('input');
+            if (first) setTimeout(() => first.focus(), 50);
+        }
+
+        function renderFillPreview() {
+            const inputs = document.querySelectorAll('#fillVars input');
+            const map = {};
+            inputs.forEach(inp => { map[inp.dataset.var] = inp.value; });
+            const html = escHtml(fillSource).replace(/\{([^{}]+)\}/g, (full, inner) => {
+                const key = inner.trim();
+                const val = map[key];
+                if (val && val.trim()) return escHtml(val);
+                return `<span class="ph-empty">{${escHtml(inner)}}</span>`;
+            });
+            document.getElementById('fillPreview').innerHTML = html;
+        }
+
+        function buildFilledText() {
+            const inputs = document.querySelectorAll('#fillVars input');
+            const map = {};
+            inputs.forEach(inp => { map[inp.dataset.var] = inp.value.trim(); });
+            return fillSource.replace(VAR_RE, (full, inner) => {
+                const val = map[inner.trim()];
+                return val ? val : full;
+            });
+        }
+
+        function copyFilled() {
+            const text = buildFilledText();
+            const missing = extractVars(text).length;
+            doCopy(text).then(() => {
+                showToast(missing ? `⚠️ 已复制，还有 ${missing} 个变量未填` : '✅ 已复制替换后的完整内容');
+                closeModal('fillModal');
+            });
+        }
+
+        // ============ 收藏 ============
+        function toggleFav(id) {
+            const s = scripts.find(x => x.id === id);
+            if (s) { s.fav = !s.fav; renderAll(); onDataChanged(); showToast(s.fav ? '⭐ 已加入收藏' : '取消收藏'); }
+        }
+
+        // ============ ADD / EDIT ============
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = '添加话术';
+            document.getElementById('fName').value = '';
+            document.getElementById('fDesc').value = '';
+            document.getElementById('fContent').value = '';
+            populateCategorySelect();
+            updateVarHint();
+            document.getElementById('replyModal').classList.add('show');
+            setTimeout(() => document.getElementById('fName').focus(), 50);
+        }
+
+        function openEditModal(id) {
+            const s = scripts.find(x => x.id === id);
+            if (!s) return;
+            editingId = id;
+            document.getElementById('modalTitle').textContent = '编辑话术';
+            document.getElementById('fName').value = s.name;
+            document.getElementById('fDesc').value = s.desc || '';
+            document.getElementById('fContent').value = s.content;
+            populateCategorySelect(s.category);
+            updateVarHint();
+            document.getElementById('replyModal').classList.add('show');
+        }
+
+        function populateCategorySelect(selected) {
+            const sel = document.getElementById('fCategory');
+            const cats = categories.filter(c => c !== 'All' && c !== '⭐ 收藏');
+            sel.innerHTML = cats.map(c => `<option value="${escHtml(c)}" ${c === selected ? 'selected' : ''}>${escHtml(c)}</option>`).join('');
+        }
+
+        function updateVarHint() {
+            const content = document.getElementById('fContent').value;
+            const vars = extractVars(content);
+            const hint = document.getElementById('varHint');
+            hint.innerHTML = vars.length
+                ? `💡 检测到 ${vars.length} 个变量：` + vars.map(v => `<span style="color:#b8860b">{${escHtml(v)}}</span>`).join('、')
+                : '💡 用花括号包裹变量，如 {姓名}、{订单号}，复制前可一键填值替换';
+        }
+
+        function saveReply() {
+            const name = document.getElementById('fName').value.trim();
+            const desc = document.getElementById('fDesc').value.trim();
+            const category = document.getElementById('fCategory').value;
+            const content = document.getElementById('fContent').value.trim();
+            if (!name || !content) { showToast('⚠️ 标题和内容不能为空'); return; }
+            if (editingId) {
+                const s = scripts.find(x => x.id === editingId);
+                if (s) { s.name = name; s.desc = desc; s.category = category; s.content = content; }
+                showToast('✅ 已更新');
+            } else {
+                scripts.push({ id: nextId++, name, desc, category, content, fav: false, order: scripts.length });
+                showToast('✅ 已添加');
+            }
+            closeModal('replyModal');
+            renderAll();
+            onDataChanged();
+        }
+
+        function deleteScript(id) {
+            if (!confirm('确定要删除这条话术吗？')) return;
+            scripts = scripts.filter(s => s.id !== id);
+            scripts.forEach((s, i) => s.order = i);
+            renderAll();
+            onDataChanged();
+            showToast('🗑️ 已删除');
+        }
+
+        // ============ CATEGORY ============
+        function openCatModal() {
+            renderCatList();
+            document.getElementById('catModal').classList.add('show');
+        }
+
+        function renderCatList() {
+            const fixed = ['All', '⭐ 收藏'];
+            const editable = categories.filter(c => !fixed.includes(c));
+            document.getElementById('catList').innerHTML = editable.map(c => `
+    <div class="cat-chip">${escHtml(c)}<button class="del-cat" onclick="deleteCategory('${escHtml(c)}')" title="删除">×</button></div>
+  `).join('');
+        }
+
+        function addCategory() {
+            const input = document.getElementById('newCatInput');
+            const name = input.value.trim();
+            if (!name) return;
+            if (categories.includes(name)) { showToast('⚠️ 分类已存在'); return; }
+            categories.push(name);
+            input.value = '';
+            renderCatList();
+            renderAll();
+            saveToStorage();
+            showToast('✅ 分类已添加');
+        }
+
+        function deleteCategory(name) {
+            const used = scripts.some(s => s.category === name);
+            if (used && !confirm(`分类“${name}”下还有话术，删除后这些话术将归类为“其他”，确定删除？`)) return;
+            scripts.forEach(s => { if (s.category === name) s.category = '其他'; });
+            if (!categories.includes('其他') && used) categories.push('其他');
+            categories = categories.filter(c => c !== name);
+            if (activeTab === name) activeTab = 'All';
+            renderCatList();
+            renderAll();
+            saveToStorage();
+            showToast('🗑️ 分类已删除');
+        }
+
+        // ============ 分组标题重命名 ============
+        function bindSectionTitleEdit() {
+            document.querySelectorAll('.title-edit-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    startEditingTitle(this.closest('.section-title'));
+                });
+            });
+        }
+        function startEditingTitle(titleEl) {
+            const currentText = titleEl.querySelector('.title-text').textContent;
+            const input = titleEl.querySelector('.title-input');
+            input.value = currentText;
+            titleEl.classList.add('editing');
+            input.focus();
+            input.select();
+        }
+        function finishEditingTitle(titleEl, save) {
+            const input = titleEl.querySelector('.title-input');
+            const textEl = titleEl.querySelector('.title-text');
+            const oldName = textEl.textContent;
+            if (save) {
+                const newName = input.value.trim();
+                if (newName && newName !== oldName) {
+                    if (oldName === '⭐ 收藏') {
+                        showToast('⚠️ 收藏分组不可重命名');
+                    } else if (activeTab !== 'All' && activeTab !== '⭐ 收藏') {
+                        const catIndex = categories.indexOf(oldName);
+                        if (catIndex !== -1) {
+                            categories[catIndex] = newName;
+                            scripts.forEach(s => { if (s.category === oldName) s.category = newName; });
+                            if (activeTab === oldName) activeTab = newName;
+                            showToast(`✅ 已重命名为 "${newName}"`);
+                            renderAll();
+                            onDataChanged();
+                            return;
+                        }
+                    } else {
+                        showToast('⚠️ 请先切换到具体分类分组再重命名');
+                    }
+                }
+            }
+            titleEl.classList.remove('editing');
+        }
+
+        // ============ DRAG（卡片长按拖拽排序） ============
+        function bindDrag() {
+            document.querySelectorAll('.reply-card').forEach(card => {
+                card.addEventListener('mousedown', onLongPressStart);
+                card.addEventListener('touchstart', onLongPressStart, { passive: true });
+                card.addEventListener('mouseup', onLongPressEnd);
+                card.addEventListener('mouseleave', onLongPressEnd);
+                card.addEventListener('touchend', onLongPressEnd);
+                card.addEventListener('touchcancel', onLongPressEnd);
+                card.addEventListener('dragstart', onDragStart);
+                card.addEventListener('dragover', onDragOver);
+                card.addEventListener('drop', onDrop);
+                card.addEventListener('dragend', onDragEnd);
+            });
+        }
+
+        function onLongPressStart(e) {
+            if (e.target.closest('button')) return;
+            const card = e.currentTarget;
+            const bar = document.getElementById('longPressBar');
+            bar.style.transition = 'none';
+            bar.style.transform = 'scaleX(0)';
+            setTimeout(() => {
+                bar.style.transition = 'transform 1s linear';
+                bar.style.transform = 'scaleX(1)';
+            }, 10);
+            longPressTimer = setTimeout(() => {
+                card.setAttribute('draggable', 'true');
+                card.classList.add('long-press-ready');
+                showToast('🤚 可以拖拽排序了');
+                bar.style.transition = 'none';
+                bar.style.transform = 'scaleX(0)';
+                longPressTimer = null;
+            }, 1000);
+        }
+        function onLongPressEnd() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+                const bar = document.getElementById('longPressBar');
+                bar.style.transition = 'transform 0.2s';
+                bar.style.transform = 'scaleX(0)';
+            }
+        }
+        function onDragStart(e) {
+            if (e.currentTarget.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
+            dragSrcEl = e.currentTarget;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', dragSrcEl.dataset.id);
+            setTimeout(() => dragSrcEl.classList.add('dragging'), 0);
+        }
+        function onDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const card = e.currentTarget;
+            if (card !== dragSrcEl) card.classList.add('drag-over');
+        }
+        function onDrop(e) {
+            e.preventDefault();
+            const targetCard = e.currentTarget;
+            if (!dragSrcEl || targetCard === dragSrcEl) return;
+            const srcId = parseInt(dragSrcEl.dataset.id);
+            const tgtId = parseInt(targetCard.dataset.id);
+            const srcIdx = scripts.findIndex(s => s.id === srcId);
+            const tgtIdx = scripts.findIndex(s => s.id === tgtId);
+            if (srcIdx === -1 || tgtIdx === -1) return;
+            const [moved] = scripts.splice(srcIdx, 1);
+            scripts.splice(tgtIdx, 0, moved);
+            scripts.forEach((s, i) => s.order = i);
+            renderAll();
+            onDataChanged();
+            showToast('✅ 排序已更新');
+        }
+        function onDragEnd() {
+            document.querySelectorAll('.reply-card').forEach(c => {
+                c.classList.remove('dragging', 'drag-over', 'long-press-ready');
+                c.setAttribute('draggable', 'false');
+            });
+            dragSrcEl = null;
+        }
+
+        // ============ 侧栏分类拖拽排序 ============
+        function bindTabDrag() {
+            const nav = document.getElementById('catNav');
+            if (!nav) return;
+            nav.querySelectorAll('.cat-item:not(.cat-fixed)').forEach(item => {
+                item.addEventListener('mousedown', onTabLongPressStart);
+                item.addEventListener('touchstart', onTabLongPressStart, { passive: true });
+                item.addEventListener('mouseup', onTabLongPressEnd);
+                item.addEventListener('mouseleave', onTabLongPressEnd);
+                item.addEventListener('touchend', onTabLongPressEnd);
+                item.addEventListener('touchcancel', onTabLongPressEnd);
+                item.addEventListener('dragstart', onTabDragStart);
+                item.addEventListener('dragover', onTabDragOver);
+                item.addEventListener('drop', onTabDrop);
+                item.addEventListener('dragend', onTabDragEnd);
+            });
+        }
+        function onTabLongPressStart(e) {
+            const item = e.currentTarget;
+            if (item.classList.contains('cat-fixed')) return;
+            if (tabLongPressTimer) clearTimeout(tabLongPressTimer);
+            tabLongPressTimer = setTimeout(() => {
+                item.setAttribute('draggable', 'true');
+                item.classList.add('cat-long-press-ready');
+                showToast('🤚 可以拖拽排序分类了');
+                tabLongPressTimer = null;
+            }, 1000);
+        }
+        function onTabLongPressEnd() {
+            if (tabLongPressTimer) { clearTimeout(tabLongPressTimer); tabLongPressTimer = null; }
+        }
+        function onTabDragStart(e) {
+            const item = e.currentTarget;
+            if (item.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
+            tabDragSrcEl = item;
+            tabIsDragging = true;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', item.dataset.category);
+            setTimeout(() => item.classList.add('cat-dragging'), 0);
+        }
+        function onTabDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const item = e.currentTarget;
+            if (item !== tabDragSrcEl) item.classList.add('cat-drag-over');
+        }
+        function onTabDrop(e) {
+            e.preventDefault();
+            const target = e.currentTarget;
+            if (!tabDragSrcEl || target === tabDragSrcEl) return;
+            const srcName = tabDragSrcEl.dataset.category;
+            const tgtName = target.dataset.category;
+            const srcIdx = categories.indexOf(srcName);
+            const tgtIdx = categories.indexOf(tgtName);
+            if (srcIdx === -1 || tgtIdx === -1) return;
+            const [moved] = categories.splice(srcIdx, 1);
+            categories.splice(tgtIdx, 0, moved);
+            renderAll();
+            onDataChanged();
+            showToast('✅ 分类顺序已更新');
+        }
+        function onTabDragEnd() {
+            document.querySelectorAll('#catNav .cat-item').forEach(t => {
+                t.classList.remove('cat-dragging', 'cat-drag-over', 'cat-long-press-ready');
+                t.setAttribute('draggable', 'false');
+            });
+            tabDragSrcEl = null;
+            tabIsDragging = false;
+        }
+
+        // ============ 备份状态 ============
+        function updateBackupStatus() {
+            const el = document.getElementById('backupStatus');
+            if (el) el.textContent = `💾 已保存 (${new Date().toLocaleTimeString()})`;
+        }
+        function getTimestamp() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+        }
+
+        // HTML 备份：把当前数据 JSON 注入文件，双击备份文件即可恢复
+        function exportHtmlBlob() {
+            saveToStorage();
+            const snapshot = { scripts, categories, nextId, exportTime: new Date().toISOString() };
+            const snapshotJson = JSON.stringify(snapshot).replace(/</g, '\\u003c');
+            let htmlContent = document.documentElement.outerHTML;
+            htmlContent = htmlContent.replace(/<script id="__EMBEDDED_BACKUP_DATA__[\s\S]*?<\/script>/g, '');
+            const injected = `<script id="__EMBEDDED_BACKUP_DATA__" type="application/json">${snapshotJson}<\/script>`;
+            htmlContent = htmlContent.replace('</head>', injected + '</head>');
+            return new Blob(['<!DOCTYPE html>\n' + htmlContent], { type: 'text/html;charset=utf-8' });
+        }
+        function manualBackup() {
+            const ts = getTimestamp();
+            const count = scripts.length;
+            const htmlBlob = exportHtmlBlob();
+            const htmlUrl = URL.createObjectURL(htmlBlob);
+            const htmlLink = document.createElement('a');
+            htmlLink.href = htmlUrl;
+            htmlLink.download = `快捷回复话术库_备份_${ts}_${count}条.html`;
+            document.body.appendChild(htmlLink);
+            htmlLink.click();
+            document.body.removeChild(htmlLink);
+            URL.revokeObjectURL(htmlUrl);
+            showToast(`💾 已备份 HTML (${count}条)`);
+        }
+
+        // ============ EXPORT Excel ============
+        function exportExcel() {
+            const count = scripts.length;
+            const data = [['ID', '标题', '分类', '话术内容', '备注', '是否收藏', '排序']];
+            scripts.forEach((s, i) => {
+                data.push([s.id, s.name, s.category, s.content, s.desc || '', s.fav ? '是' : '否', s.order ?? i]);
+            });
+            const ws1 = XLSX.utils.aoa_to_sheet(data);
+            ws1['!cols'] = [{ wch: 6 }, { wch: 24 }, { wch: 14 }, { wch: 80 }, { wch: 30 }, { wch: 8 }, { wch: 8 }];
+
+            const catData = [['分组顺序', '说明']];
+            categories.forEach(c => {
+                let note = '用户分组';
+                if (c === 'All') note = '系统保留:全部';
+                else if (c === '⭐ 收藏') note = '系统保留:收藏';
+                catData.push([c, note]);
+            });
+            const ws2 = XLSX.utils.aoa_to_sheet(catData);
+            ws2['!cols'] = [{ wch: 25 }, { wch: 20 }];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws1, '话术');
+            XLSX.utils.book_append_sheet(wb, ws2, '分组顺序');
+            XLSX.writeFile(wb, `快捷回复话术库_${count}条.xlsx`);
+            showToast(`📤 已导出 (${count}条 + ${categories.length}个分组)`);
+        }
+
+        // ============ IMPORT ============
+        function importFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (ext === 'html') {
+                showToast('📥 请直接双击 HTML 备份文件打开，数据会自动恢复');
+                event.target.value = '';
+                return;
+            }
+            if (scripts.length > 0 && !confirm(`当前有 ${scripts.length} 条话术，导入后将全部替换为文件中的数据，确定继续？`)) {
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const wb = XLSX.read(e.target.result, { type: 'binary' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                    if (rows.length < 2) { showToast('⚠️ 文件内容为空'); return; }
+
+                    const header = rows[0].map(h => String(h || '').toLowerCase());
+                    const nameIdx = header.findIndex(h => h.includes('标题') || h.includes('名称') || h.includes('name'));
+                    const catIdx = header.findIndex(h => h.includes('分类') || h.includes('cat'));
+                    const contentIdx = header.findIndex(h => h.includes('内容') || h.includes('content'));
+                    const descIdx = header.findIndex(h => h.includes('备注') || h.includes('描述') || h.includes('desc'));
+                    const favIdx = header.findIndex(h => h.includes('收藏') || h.includes('fav'));
+                    const orderIdx = header.findIndex(h => h.includes('排序') || h.includes('order'));
+                    if (nameIdx === -1 || contentIdx === -1) { showToast('⚠️ 找不到标题或内容列，请检查表头'); return; }
+
+                    let importedCategories = null;
+                    const catSheetName = wb.SheetNames.find(n => n.includes('分组') || n.toLowerCase().includes('categ'));
+                    if (catSheetName) {
+                        const catRows = XLSX.utils.sheet_to_json(wb.Sheets[catSheetName], { header: 1 });
+                        importedCategories = catRows.slice(1).map(r => String(r[0] || '').trim()).filter(c => c.length > 0);
+                    }
+
+                    scripts = [];
+                    nextId = 1;
+                    if (importedCategories && importedCategories.length > 0) {
+                        categories = importedCategories.slice();
+                        if (!categories.includes('All')) categories.unshift('All');
+                        if (!categories.includes('⭐ 收藏')) {
+                            const allIdx = categories.indexOf('All');
+                            categories.splice(allIdx + 1, 0, '⭐ 收藏');
+                        }
+                    } else {
+                        categories = ['All', '⭐ 收藏'];
+                    }
+
+                    let added = 0;
+                    rows.slice(1).forEach((row, idx) => {
+                        const name = String(row[nameIdx] || '').trim();
+                        const content = String(row[contentIdx] || '').trim();
+                        if (!name || !content) return;
+                        const desc = descIdx >= 0 ? String(row[descIdx] || '') : '';
+                        let cat = catIdx >= 0 ? String(row[catIdx] || '').trim() : '其他';
+                        if (!cat) cat = '其他';
+                        if (!categories.includes(cat)) categories.push(cat);
+                        const fav = favIdx >= 0 ? (String(row[favIdx] || '').includes('是') || String(row[favIdx] || '').toLowerCase() === 'true') : false;
+                        const order = orderIdx >= 0 ? (parseInt(row[orderIdx]) || idx) : idx;
+                        scripts.push({ id: nextId++, name, desc, category: cat, content, fav, order });
+                        added++;
+                    });
+                    scripts.sort((a, b) => a.order - b.order);
+
+                    renderAll();
+                    onDataChanged();
+                    showToast(`✅ 导入 ${added} 条 + ${categories.length} 个分组`);
+                } catch (err) {
+                    showToast('❌ 导入失败：' + err.message);
+                }
+                event.target.value = '';
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        // ============ MODAL / TOAST ============
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+        document.querySelectorAll('.modal-overlay').forEach(el => {
+            el.addEventListener('click', function (e) { if (e.target === el) el.classList.remove('show'); });
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+        });
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        // ============ 自动保存时机 ============
+        window.addEventListener('beforeunload', saveToStorage);
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') saveToStorage();
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const nav = document.getElementById('catNav');
+            if (nav) {
+                nav.addEventListener('wheel', function (e) {
+                    if (this.scrollWidth > this.clientWidth) { this.scrollLeft += e.deltaY; e.preventDefault(); }
+                }, { passive: false });
+            }
+        });
+
+        // ============ INIT ============
+        renderAll();
+    </script>
+</body>
+
+</html>
