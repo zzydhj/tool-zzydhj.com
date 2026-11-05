@@ -1,10 +1,10 @@
 /* ══════════════════════════════════════════════════════════════════
    site-ui.js —— 全站通用 UI 注入
    1) 兜底注入 favicon
-   2) 右下角悬浮「首页」按钮：点击回首页；悬停弹出工具抽屉可直接切换
+   2) 左下角悬浮「首页」按钮：点击回首页；悬停弹出工具抽屉可直接切换
       （工具列表来自单一数据源 /tools.json，与首页共用）
    3) 挂 window.__CLOUD_AUTH__：区分「云端部署 / 本地开发」
-   4) 暴露 window.__SITE_CORNER__()：返回右下角竖排容器，供 sync.js 挂载状态点
+   （右下角云同步状态点由 tools/sync.js 自行挂载，与本文件互不耦合）
    引入：<script src="/site-ui.js"></script>
    ══════════════════════════════════════════════════════════════════ */
 (function () {
@@ -30,7 +30,7 @@
   var css = document.createElement('style');
   css.textContent = [
     '.sc-item{position:relative}',
-    '.sc-pop{display:none;position:absolute;right:44px;bottom:0;z-index:99999}',
+    '.sc-pop{display:none;position:absolute;bottom:0;z-index:99999}',
     '.sc-item:hover .sc-pop{display:block}',
     '#site-drawer{width:230px;max-height:62vh;overflow:auto;background:#fff;border:1px solid #e6e6e6;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,.16);padding:8px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}',
     '#site-drawer .dh{font-size:11px;color:#aaa;padding:6px 8px 6px;letter-spacing:.5px}',
@@ -43,18 +43,16 @@
   ].join('');
   document.head.appendChild(css);
 
-  // ── 4. 右下角竖排容器（供本文件与 sync.js 共用）──
-  function ensureCorner() {
-    var r = document.getElementById('site-corner');
+  // ── 4. 左下角容器（首页按钮 + 抽屉）──
+  function homeCorner() {
+    var r = document.getElementById('site-home-corner');
     if (r) return r;
     r = document.createElement('div');
-    r.id = 'site-corner';
-    r.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:99997;' +
-      'display:flex;flex-direction:column;align-items:flex-end;gap:10px;';
+    r.id = 'site-home-corner';
+    r.style.cssText = 'position:fixed;left:14px;bottom:14px;z-index:99997;';
     document.body.appendChild(r);
     return r;
   }
-  window.__SITE_CORNER__ = ensureCorner;
 
   // ── 2. 首页按钮 + 工具抽屉（首页本身不显示）──
   var path;
@@ -62,14 +60,16 @@
   var isHome = (path === '/' || /\/index\.html$/i.test(path) || path === '');
   if (isHome) return;
 
-  function buildHome(rail) {
+  function buildHome() {
     if (document.getElementById('site-home-btn')) return;
+    var corner = homeCorner();
     var item = document.createElement('div');
     item.className = 'sc-item';
 
     var drawer = document.createElement('div');
     drawer.className = 'sc-pop';
     drawer.id = 'site-drawer';
+    drawer.style.left = '44px';
     drawer.innerHTML = '<div class="dh">🧰 工具切换</div><div id="site-drawer-list">加载中…</div>';
 
     var a = document.createElement('a');
@@ -89,7 +89,7 @@
 
     item.appendChild(drawer);
     item.appendChild(a);
-    rail.appendChild(item);
+    corner.appendChild(item);
     loadDrawer();
   }
 
@@ -114,7 +114,7 @@
       });
   }
 
-  function mount() { buildHome(ensureCorner()); }
+  function mount() { buildHome(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', mount);
   } else {
